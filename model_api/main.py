@@ -22,7 +22,7 @@ logged_model = 'runs:/2643540303a44773955ae0cd8d441403/models'
 loaded_model = mlflow.pyfunc.load_model(logged_model)
 
 # Connexion à la base de données MongoDB
-client = MongoClient("mongodb://root:example@localhost:27017/")
+client = MongoClient("mongodb://localhost:27017")
 db = client["braintumor"]
 
 # Pydantic Model for Patient Data

@@ -11,17 +11,63 @@
 </head>
 <body>
     <h1>View Patients</h1>
+    
+    <!-- Formulaire de recherche -->
+    <form id="searchForm" method="GET" action="/search_patients">
+        <label for="searchInput">Search:</label>
+        <input type="text" id="searchInput" name="search">
+        <button type="submit">Search</button>
+        <button type="button" id="searchAllButton">Cancel</button>
+    </form>
 
     <a href="{{ url_for('add_patient') }}">Add Patient</a>
 
+    <!-- Tableau des patients invalidés-->
+    <h2>Patients à valider</h2>
     <table border="1">
         <thead>
             <tr>
                 <th>Name</th>
                 <th>Age</th>
                 <th>Gender</th>
-                <th>Action</th>
-                <th>Prediction</th>
+                <th>Prediction(%)</th>
+                <th>Action</th>                
+                <th>View</th>
+                <th>PDF</th>
+                <th>Valider</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for patient in patients %}
+                <tr>
+                    <td>{{ patient.name }}</td>
+                    <td>{{ patient.age }}</td>
+                    <td>{{ patient.gender }}</td>                   
+                    <td>{{ patient.prediction }}</td>
+                    
+                    <td>
+                        <a href="{{ url_for('edit_patient', patient_id=patient.id) }}">Edit</a>
+                    </td>
+                    <td><a href="{{ url_for('edit_patient', patient_id=patient.id) }}">Details</a></td>
+                    
+                    <td><a href="{{ url_for('download_pdf_predict') }}">Telecharger PDF</a></td>
+                    <td><button onclick="confirmValider('{{ patient.id }}')">Valider</button></td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Tableau des patients validés -->
+    <h2>Patients validés</h2>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Age</th>
+                <th>Gender</th>
+                <th>Action</th>                
+                <th>View</th>
+                <th>PDF</th>
             </tr>
         </thead>
         <tbody>
@@ -30,13 +76,32 @@
                     <td>{{ patient.name }}</td>
                     <td>{{ patient.age }}</td>
                     <td>{{ patient.gender }}</td>
-                    <td>{{ patient.prediction }}</td>
                     <td>
                         <a href="{{ url_for('edit_patient', patient_id=patient.id) }}">Edit</a>
                     </td>
+                    <td><a href="{{ url_for('edit_patient', patient_id=patient.id) }}">Details</a></td>                    
+                    <td><a href="{{ url_for('download_pdf_predict') }}">Telecharger PDF</a></td>
                 </tr>
             {% endfor %}
         </tbody>
     </table>
+
+    <script>
+        // JavaScript pour soumettre le formulaire de recherche
+        document.getElementById('searchForm').addEventListener('submit', function(event) {
+            event.preventDefault(); // Empêcher le formulaire de se soumettre normalement
+            const searchInput = document.getElementById('searchInput').value;
+            // Rediriger vers la route de recherche avec le paramètre de recherche
+            window.location.href = '/search_patients?search=' + searchInput;
+        });
+
+        // JavaScript pour rechercher tous les utilisateurs
+        document.getElementById('searchAllButton').addEventListener('click', function(event) {
+            // Empêcher le comportement par défaut du bouton (changement d'URL)
+            event.preventDefault();
+            // Rediriger vers la route de vue des patients sans aucun paramètre de recherche
+            window.location.href = '/view_patients';
+        });
+    </script>
 </body>
 </html>
