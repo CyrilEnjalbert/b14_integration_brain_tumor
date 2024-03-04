@@ -1,0 +1,84 @@
+<!-- add_patient.html -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Patient</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', path='styles.css') }}">
+</head>
+<body>
+
+    <h1>Add Patient</h1>
+
+    <form id="patientForm">
+        <label for="name">Name</label>
+        <input type="text" id="name" name="name" required>
+
+        <label for="age">Age</label>
+        <input type="number" id="age" name="age" required>
+
+        <label for="gender">Gender</label>
+        <select id="gender" name="gender" required>
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+        </select>
+
+        <label for="image">Image</label>
+        <input type="file" id="image" name="image" accept="image/*">
+
+        <!-- Add other necessary fields based on the PatientModel -->
+
+        <button type="button" onclick="submitForm()">Submit</button>
+    </form>
+
+    <!-- Ajoutez ceci à votre fichier add_patient.html -->
+    <script>
+        async function submitForm() {
+            const name = document.getElementById('name').value;
+            const age = document.getElementById('age').value;
+            const gender = document.getElementById('gender').value;
+            const imageInput = document.getElementById('image');
+            const image = imageInput.files[0]; // Get the file object
+
+            // Read the file content as Base64
+            const reader = new FileReader();
+            reader.readAsDataURL(image);
+            
+            reader.onload = async function () {
+                const base64Image = reader.result.split(',')[1]; // Get the Base64 data (remove the header)
+                
+                const response = await fetch('/add_patient', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        name,
+                        age,
+                        gender,
+                        image: base64Image, // Send the Base64 data
+                    }),
+                });
+
+                if (response.ok) {
+                    const responseData = await response.json();
+                    const redirectUrl = responseData.redirect_url;
+
+                    // Redirection après l'ajout du patient
+                    window.location.href = redirectUrl;
+                } else {
+                    // Handle errors if necessary
+                    console.error('Erreur lors de l\'ajout du patient');
+                }
+            };
+
+            reader.onerror = function (error) {
+                console.error('Error reading the file:', error);
+            };
+        }
+    </script>
+</body>
+</html>
