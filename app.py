@@ -24,7 +24,8 @@ class PatientModel(BaseModel):
     age: int
     gender: str
     image: bytes
-    prediction: Optional[float]
+    #prediction: float
+    # validation: str
     
 # Modèles Pydantic pour la modification du patient
 class PatientUpdateModel(BaseModel):
@@ -32,7 +33,8 @@ class PatientUpdateModel(BaseModel):
     age: int
     gender: str
     image: bytes
-    prediction: Optional[str]
+    # prediction: float
+    # validation: str
 
 # Modèles Pydantic pour la visualisation des patients
 class PatientViewModel(BaseModel):
@@ -40,7 +42,8 @@ class PatientViewModel(BaseModel):
     age: int
     gender: str
     id: str
-    prediction: Optional[float]
+    prediction: float
+    # validation: str
 
     
 # Modèle Pydantic pour les prédictions (à adapter selon vos besoins)
@@ -82,8 +85,6 @@ def add_patient(request: Request):
 async def add_patient_post(patient: PatientModel):
     # Insérer le patient dans la base de données
     patient_data = patient.dict()
-
-    print(patient)
 
     db.patients.insert_one(patient_data)
     # URL of the FastAPI endpoint
