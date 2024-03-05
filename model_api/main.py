@@ -22,16 +22,16 @@ logged_model = 'runs:/2643540303a44773955ae0cd8d441403/models'
 loaded_model = mlflow.pyfunc.load_model(logged_model)
 
 # Connexion à la base de données MongoDB
-client = MongoClient("mongodb://root:example@localhost:27017/")
+client = MongoClient("mongodb://localhost:27017")
 db = client["braintumor"]
 
-# Pydantic Model for Patient Data
 class PatientModel(BaseModel):
     name: str
     age: int
     gender: str
     image: bytes
-    prediction: Optional[float]
+    prediction: Optional[float] = None
+    validation: Optional[str] = None
 
 # Fonction pour normaliser les images
 def normalize_images(X, target_size):
@@ -105,9 +105,7 @@ def predict(patient):
     predictions = loaded_model.predict(processed_image)
 
     # Assuming predictions is a single float value
-    patient.prediction = float(predictions[0])
-    
-    return patient
+    return float(predictions[0])
 
 # Function to update MongoDB collection with predictions
 def update_collection(patients):
@@ -127,14 +125,15 @@ async def run_prediction():
     # Execute prediction model for each patient
     for patient in patients:
         print(f"Processing prediction for patient: {patient.name}")
-        patient = predict(patient)
+        patient.prediction = predict(patient)
         print(f"Prediction for patient {patient.name}: {patient.prediction}")
 
     # Update MongoDB collection with predictions
     update_collection(patients)
 
-    print("Predictions updated successfully")
-    return {"message": "Predictions updated successfully"}
+    print("Predictions calculated and updated successfully")
+    return {"message": "Predictions calculated and updated successfully"}
+
 
 if __name__ == "__main__":
     import uvicorn

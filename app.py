@@ -2,18 +2,19 @@ import uvicorn
 from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse, Response
 from pymongo import MongoClient
 from bson import ObjectId
 from pydantic import BaseModel
 from typing import Optional
 import requests
+from weasyprint import HTML
 
 
 app = FastAPI()
 
 # Connexion à la base de données MongoDB
-client = MongoClient("mongodb://root:example@localhost:27017/")
+client = MongoClient("mongodb://localhost:27017")
 db = client["braintumor"]  # Remplacez "your_database_name" par le nom de votre base de données MongoDB
 
 
@@ -23,15 +24,17 @@ class PatientModel(BaseModel):
     age: int
     gender: str
     image: bytes
-    prediction: Optional[float]
-
+    #prediction: float
+    # validation: str
+    
 # Modèles Pydantic pour la modification du patient
 class PatientUpdateModel(BaseModel):
     name: str
     age: int
     gender: str
     image: bytes
-    prediction: Optional[str]
+    # prediction: float
+    # validation: str
 
 # Modèles Pydantic pour la visualisation des patients
 class PatientViewModel(BaseModel):
@@ -39,7 +42,8 @@ class PatientViewModel(BaseModel):
     age: int
     gender: str
     id: str
-    prediction: Optional[str]
+    prediction: float
+    # validation: str
 
     
 # Modèle Pydantic pour les prédictions (à adapter selon vos besoins)
@@ -82,13 +86,11 @@ async def add_patient_post(patient: PatientModel):
     # Insérer le patient dans la base de données
     patient_data = patient.dict()
 
-    print(patient)
-
     db.patients.insert_one(patient_data)
     # URL of the FastAPI endpoint
 
     # Send a POST request to the endpoint
-    requests.post( f"http://localhost:8000/predict")
+    requests.post("http://localhost:8000/predict")
     return JSONResponse(content={"redirect_url": "/view_patients"})
 
 
@@ -115,6 +117,52 @@ async def edit_patient_post(patient_id: str, patient: PatientUpdateModel):
     db.patients.update_one({"_id": ObjectId(patient_id)}, {"$set": patient.model_dump()})
     return RedirectResponse(url="/view_patients")
 
+# --------------------------------------------
+
+
+@app.get("/download_pdf_predict")
+async def download_pdf_predict():
+    # Créer le HTML avec les données des patients
+    html_content = """
+    <html>
+    <head><title>Predictions PDF</title></head>
+    <body>
+        <h1>Predictions PDF</h1>
+        <table border="1">
+            <thead>
+                <tr>
+                    <th></th>
+                    <th>Age</th>
+                    <th>Gender</th>
+                    <th>Prediction</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>John Doe</td>
+                    <td>30</td>
+                    <td>Male</td>
+                    <td>0.75</td>
+                </tr>
+                <tr>
+                    <td>Jane Doe</td>
+                    <td>25</td>
+                    <td>Female</td>
+                    <td>0.80</td>
+                </tr>
+            </tbody>
+        </table>
+    </body>
+    </html>
+    """
+
+    # Générer le PDF à partir du HTML
+    pdf_bytes = HTML(string=html_content).write_pdf()
+
+    # Renvoyer le PDF comme une réponse HTTP
+    response = Response(content=pdf_bytes, media_type='application/pdf')
+    response.headers['Content-Disposition'] = 'attachment; filename="predictions_tumor.pdf"'
+    return response
 
 if __name__ == '__main__':
     import uvicorn    
