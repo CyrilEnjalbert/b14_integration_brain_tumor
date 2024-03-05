@@ -74,10 +74,10 @@ def preprocess_image(image):
     target_size = (224, 224)
 
     # Decode base64 string to bytes
-    #image_bytes = base64.b64decode(image)
+    image_bytes = base64.b64decode(image)
     
     # Open bytes as image using PIL
-    img = Image.open(BytesIO(image))
+    img = Image.open(BytesIO(image_bytes))
     
     # Convertir l'image en un tableau numpy
     img_array = np.array(img)
@@ -105,7 +105,8 @@ def predict(patient):
     predictions = loaded_model.predict(processed_image)
 
     # Assuming predictions is a single float value
-    return float(predictions[0])
+    patient.prediction = float(predictions[0])
+    return patient.prediction
 
 # Function to update MongoDB collection with predictions
 def update_collection(patients):
