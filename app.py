@@ -71,11 +71,11 @@ async def search_patients(request: Request, search: Optional[str] = None):
     patients = [PatientViewModel(id=str(patient['_id']), **patient) for patient in patients_from_db]
     return templates.TemplateResponse("view_patients.html", {"request": request, "patients": patients})
 
-@app.get("/view_image/{patient_id}", response_class=HTMLResponse)
-async def view_image(request: Request, patient_id: str):
-    # Récupérer les informations du patient pour affichage dans la page view_image.html
-    patient = PatientModel(**db.patients.find_one({"_id": ObjectId(patient_id)}))
-    return templates.TemplateResponse("view_image.html", {"request": request, "patient": patient})
+# @app.get("/view_image/{patient_id}", response_class=HTMLResponse)
+# async def view_image(request: Request, patient_id: str):
+#     # Récupérer les informations du patient pour affichage dans la page view_image.html
+#     patient = PatientModel(**db.patients.find_one({"_id": ObjectId(patient_id)}))
+#     return templates.TemplateResponse("view_image.html", {"request": request, "patient": patient})
 
 # Route pour ajouter un patient
 @app.get("/add_patient", response_class=HTMLResponse)
@@ -219,8 +219,30 @@ async def download_pdf_predict(patient_id: str):
     except Exception as e:
         return JSONResponse(content={"message": "An error occurred while generating the PDF."}, status_code=500)
 
+# Dans votre route FastAPI pour afficher les détails du patient
+@app.get("/details_patients/{patient_id}", response_class=HTMLResponse)
+async def details_patients(request: Request, patient_id: str):
+    # Récupérer les informations du patient depuis la base de données
+    patient = db.patients.find_one({"_id": ObjectId(patient_id)})
+    if patient:
+        # Décoder l'image base64
+        # Récupérer l'image depuis la base de données
+        image_bytes = patient['image']
 
-    
+            # Décodez l'image base64
+        image_data = base64.b64decode(image_bytes)
+
+            # Balise d'image HTML avec la chaîne base64 de l'image
+        image_html = f"<img src='data:image/jpeg;base64,{image_bytes}' />"
+
+        return templates.TemplateResponse("details_patients.html", {"request": request, "patient": patient})
+    else:
+        return JSONResponse(content={"message": "Patient not found."}, status_code=404)
+
+
+
+
+
 if __name__ == '__main__':
     import uvicorn    
     uvicorn.run(app, host='0.0.0.0', port=8010)
