@@ -121,49 +121,111 @@ async def edit_patient_post(patient_id: str, patient: PatientUpdateModel):
 # --------------------------------------------
 
 
-@app.get("/download_pdf_predict")
-async def download_pdf_predict():
-    # Créer le HTML avec les données des patients
-    html_content = """
-    <html>
-    <head><title>Predictions PDF</title></head>
-    <body>
-        <h1>Predictions PDF</h1>
-        <table border="1">
-            <thead>
-                <tr>
-                    <th></th>
-                    <th>Age</th>
-                    <th>Gender</th>
-                    <th>Prediction</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>John Doe</td>
-                    <td>30</td>
-                    <td>Male</td>
-                    <td>0.75</td>
-                </tr>
-                <tr>
-                    <td>Jane Doe</td>
-                    <td>25</td>
-                    <td>Female</td>
-                    <td>0.80</td>
-                </tr>
-            </tbody>
-        </table>
-    </body>
-    </html>
-    """
+import base64
 
-    # Générer le PDF à partir du HTML
-    pdf_bytes = HTML(string=html_content).write_pdf()
+@app.get("/download_pdf_predict/{patient_id}")
+async def download_pdf_predict(patient_id: str):
+    try:
+        # Fetch patient data
+        patient = db.patients.find_one({"_id": ObjectId(patient_id)})
+        if patient:
+            # Récupérer l'image depuis la base de données
+            image_bytes = patient['image']
 
-    # Renvoyer le PDF comme une réponse HTTP
-    response = Response(content=pdf_bytes, media_type='application/pdf')
-    response.headers['Content-Disposition'] = 'attachment; filename="predictions_tumor.pdf"'
-    return response
+            # Décodez l'image base64
+            image_data = base64.b64decode(image_bytes)
+
+            # Balise d'image HTML avec la chaîne base64 de l'image
+            image_html = f"<img src='data:image/jpeg;base64,{image_bytes}' />"
+
+            # Style CSS pour le PDF
+            css_style = """
+            <style>
+                body {
+                    font-family: Arial, sans-serif;
+                }
+                h1 {
+                    text-align: center;
+                    margin-bottom: 20px;
+                }
+                table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin-bottom: 20px;
+                }
+                th, td {
+                    border: 1px solid #dddddd;
+                    text-align: left;
+                    padding: 8px;
+                }
+                th {
+                    background-color: #f2f2f2;
+                }
+                img {
+                    max-width: 1000px;
+                    max-height: 1000px;
+                }
+            </style>
+            """
+
+            html_content = f"""
+            <html>
+            <head><title>Predictions - {patient['name']}</title>{css_style}</head>
+            <body>
+                <h1>Predictions - {patient['name']}</h1>
+                
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Age</th>
+                            <th>Gender</th>
+                            <th>Prediction</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>{patient['age']}</td>
+                            <td>{patient['gender']}</td>
+                            <td>{patient['prediction']}</td>                            
+                        </tr>
+                    </tbody>
+                </table>
+                {image_html}
+            </body>
+            </html>
+            """
+
+            # Génération du PDF à partir du contenu HTML
+            pdf_bytes = HTML(string=html_content).write_pdf()
+
+            # Retourner le PDF en tant que réponse HTTP
+            response = Response(content=pdf_bytes, media_type='application/pdf')
+            response.headers['Content-Disposition'] = f'attachment; filename="{patient["name"]}_predictions_tumor.pdf"'
+            return response
+        else:
+            return JSONResponse(content={"message": "Patient not found."}, status_code=404)
+    except Exception as e:
+        return JSONResponse(content={"message": "An error occurred while generating the PDF."}, status_code=500)
+
+# Dans votre route FastAPI pour afficher les détails du patient
+@app.get("/details_patients/{patient_id}", response_class=HTMLResponse)
+async def details_patients(request: Request, patient_id: str):
+    # Récupérer les informations du patient depuis la base de données
+    patient = db.patients.find_one({"_id": ObjectId(patient_id)})
+    if patient:
+        # Décoder l'image base64
+        # Récupérer l'image depuis la base de données
+        image_bytes = patient['image']
+
+            # Décodez l'image base64
+        image_data = base64.b64decode(image_bytes)
+
+            # Balise d'image HTML avec la chaîne base64 de l'image
+        image_html = f"<img src='data:image/jpeg;base64,{image_bytes}' />"
+
+        return templates.TemplateResponse("details_patients.html", {"request": request, "patient": patient})
+    else:
+        return JSONResponse(content={"message": "Patient not found."}, status_code=404)
 
 if __name__ == '__main__':
     import uvicorn    

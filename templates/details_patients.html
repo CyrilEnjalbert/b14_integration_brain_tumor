@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="http://localhost:8010/static/styles.css">        
+</head>
+<body>
+    <h1>Détails du patient</h1>
+    <h2>Nom : {{ patient.name }}</h2>
+    <h2>Age : {{ patient.age }}</h2>
+    <h2>Prediction : {{ patient.prediction }}</h2>
+    <!-- Utilisation de l'image encodée en base64 -->
+    <img src="data:image/jpeg;base64,{{ patient.encoded_image }}" alt="Patient Tumor Image">
+    <form action="/validate_patient/{{ patient.id }}" method="POST">
+        <button type="submit" name="validate">Valider</button>
+        <button type="submit" name="reject">Ne pas valider</button>
+    </form>
+</body>
+</html>
