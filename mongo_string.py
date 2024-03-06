@@ -1,0 +1,1 @@
+mongo_string = "mongodb://root:example@localhost:27017/"
