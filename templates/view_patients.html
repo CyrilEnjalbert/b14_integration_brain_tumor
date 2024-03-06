@@ -6,11 +6,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>View Patients</title>
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', path='styles.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 </head>
 <body>
     <h1>View Patients</h1>
     
     <div id="actions-container">
+        <!-- Tabs for different tables -->
+        <div class="tabs">
+            <button class="tablinks to-validate-btn" onclick="openTable(event, 'to-validate')" id="defaultOpen">To Validate</button>
+            <button class="tablinks corrected-btn" onclick="openTable(event, 'corrected')">Corrected</button>
+            <button class="tablinks validated-btn" onclick="openTable(event, 'validated')">Validated</button>
+        </div>
         <form id="searchForm" method="GET" action="/search_patients">
             <input type="text" id="searchInput" name="search" placeholder="Search for a patient...">
             <button type="submit">Search</button>
@@ -21,13 +28,6 @@
         </button>
     </div>
 
-    <!-- Tabs for different tables -->
-    <div class="tabs">
-        <button class="tablinks to-validate-btn" onclick="openTable(event, 'to-validate')" id="defaultOpen">To Validate</button>
-        <button class="tablinks corrected-btn" onclick="openTable(event, 'corrected')">Corrected</button>
-        <button class="tablinks validated-btn" onclick="openTable(event, 'validated')">Validated</button>
-    </div>
-
     <!-- Table for Predictions to Validate -->
     <div id="to-validate" class="tabcontent">
         <table border="1">
@@ -36,11 +36,9 @@
                     <th>Name</th>
                     <th>Age</th>
                     <th>Gender</th>
-                    <th>Prediction(%)</th>
-                    <th>Action</th>                
-                    <th>View</th>
-                    <th>PDF</th>
-                    <th>Valider</th>
+                    <th>Prediction</th>
+                    <th>Validation</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -50,14 +48,11 @@
                         <td>{{ patient.age }}</td>
                         <td>{{ patient.gender }}</td>                   
                         <td>{{ patient.prediction }}</td>
-                        
-                        <td>
-                            <a href="{{ url_for('edit_patient', patient_id=patient.id) }}">Edit</a>
+                        <td class="icon-cell"><a href="{{ url_for('edit_patient', patient_id=patient.id) }}"><i class="fas fa-eye"></i></a></td>
+                        <td class="icon-cell">
+                            <a href="{{ url_for('edit_patient', patient_id=patient.id) }}"><i class="fas fa-edit"></i></a>
+                            <a href="{{ url_for('download_pdf_predict') }}"><i class="fas fa-download"></i></a>
                         </td>
-                        <td><a href="{{ url_for('edit_patient', patient_id=patient.id) }}">Details</a></td>
-                        
-                        <td><a href="{{ url_for('download_pdf_predict') }}">Telecharger PDF</a></td>
-                        <td><button onclick="confirmValider('{{ patient.id }}')">Valider</button></td>
                     </tr>
                 {% endfor %}
             </tbody>
@@ -72,9 +67,9 @@
                     <th>Name</th>
                     <th>Age</th>
                     <th>Gender</th>
-                    <th>Action</th>                
-                    <th>View</th>
-                    <th>PDF</th>
+                    <th>Prediction</th>
+                    <th>Doctor's opinion</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -82,12 +77,13 @@
                     <tr>
                         <td>{{ patient.name }}</td>
                         <td>{{ patient.age }}</td>
-                        <td>{{ patient.gender }}</td>
-                        <td>
-                            <a href="{{ url_for('edit_patient', patient_id=patient.id) }}">Edit</a>
+                        <td>{{ patient.gender }}</td>                   
+                        <td>{{ patient.prediction }}</td>
+                        <td>{{ patient.validation }}</td>
+                        <td class="icon-cell">
+                            <a href="{{ url_for('edit_patient', patient_id=patient.id) }}"><i class="fas fa-edit"></i></a>
+                            <a href="{{ url_for('download_pdf_predict') }}"><i class="fas fa-download"></i></a>
                         </td>
-                        <td><a href="{{ url_for('edit_patient', patient_id=patient.id) }}">Details</a></td>                    
-                        <td><a href="{{ url_for('download_pdf_predict') }}">Telecharger PDF</a></td>
                     </tr>
                 {% endfor %}
             </tbody>
@@ -102,9 +98,9 @@
                     <th>Name</th>
                     <th>Age</th>
                     <th>Gender</th>
-                    <th>Action</th>                
-                    <th>View</th>
-                    <th>PDF</th>
+                    <th>Prediction</th>
+                    <th>Doctor's opinion</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -112,12 +108,13 @@
                     <tr>
                         <td>{{ patient.name }}</td>
                         <td>{{ patient.age }}</td>
-                        <td>{{ patient.gender }}</td>
-                        <td>
-                            <a href="{{ url_for('edit_patient', patient_id=patient.id) }}">Edit</a>
+                        <td>{{ patient.gender }}</td>                   
+                        <td>{{ patient.prediction }}</td>
+                        <td>{{ patient.validation }}</td>
+                        <td class="icon-cell">
+                            <a href="{{ url_for('edit_patient', patient_id=patient.id) }}"><i class="fas fa-edit"></i></a>
+                            <a href="{{ url_for('download_pdf_predict') }}"><i class="fas fa-download"></i></a>
                         </td>
-                        <td><a href="{{ url_for('edit_patient', patient_id=patient.id) }}">Details</a></td>                    
-                        <td><a href="{{ url_for('download_pdf_predict') }}">Telecharger PDF</a></td>
                     </tr>
                 {% endfor %}
             </tbody>

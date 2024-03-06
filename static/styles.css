@@ -64,11 +64,29 @@ th, td {
 th {
     background-color: #4caf50;
     color: white;
+    text-align: center;
+}
+
+.icon-cell {
+    text-align: center;
+}
+
+.icon-cell i {
+    color: #4b4b4b;
+    margin: 0 10px;
+}
+.icon-cell i:hover {
+    color: #272727;
 }
 
 #actions-container {
     display: flex;
+    justify-content: flex-start;
     margin: 30px 0;
+}
+
+#actions-container > * {
+    margin-right: 100px;
 }
 
 #searchForm {
@@ -77,7 +95,7 @@ th {
     justify-content: space-between;
     align-items: center;
     padding: 0;
-    margin: 0 auto 0 0;
+    margin: 0 100px 0 0;
     min-width: 400px;
 }
 
@@ -107,6 +125,7 @@ button.tablinks:hover,
 #cancel-btn:hover {
     background-color: #a0a0a0;
 }
+
 
 /* Background colors for active tab buttons and headers */
 
