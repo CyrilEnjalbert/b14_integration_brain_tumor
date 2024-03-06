@@ -1,0 +1,1 @@
+logged_model = 'runs:/19188d3ff2fe4e6a8c0e64f37022d2f4/models'

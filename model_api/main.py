@@ -1,16 +1,19 @@
 import base64
-from fastapi import FastAPI
-from pymongo import MongoClient
 import os
 import cv2
+import mlflow
 import numpy as np
+import tensorflow as tf
+
+from fastapi import FastAPI
+from pymongo import MongoClient
 from PIL import Image
 from pydantic import BaseModel
 from bson import ObjectId
 from typing import Optional
-import mlflow
-import tensorflow as tf
 from io import BytesIO
+
+from model_run import logged_model
 
 app = FastAPI()
 
@@ -18,7 +21,6 @@ os.environ['CUDA_VISIBLE_DEVICES'] = '1'
 
 mlflow.set_tracking_uri("http://127.0.0.1:5000")
 
-logged_model = 'runs:/2643540303a44773955ae0cd8d441403/models'
 loaded_model = mlflow.pyfunc.load_model(logged_model)
 
 # Connexion à la base de données MongoDB
