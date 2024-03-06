@@ -12,15 +12,17 @@
 <body>
     <h1>View Patients</h1>
     
-    <!-- Formulaire de recherche -->
-    <form id="searchForm" method="GET" action="/search_patients">
-        <label for="searchInput">Search:</label>
-        <input type="text" id="searchInput" name="search">
-        <button type="submit">Search</button>
-        <button type="button" id="searchAllButton">Cancel</button>
-    </form>
-
-    <a href="{{ url_for('add_patient') }}">Add Patient</a>
+    <div id="actions-container">
+        <!-- Formulaire de recherche -->
+        <form id="searchForm" method="GET" action="/search_patients">
+            <input type="text" id="searchInput" name="search" placeholder="Search for a patient...">
+            <button type="submit">Search</button>
+            <button type="button" id="cancel-btn">Cancel</button>
+        </form>
+        <button class="add-btn">
+            <a href="{{ url_for('add_patient') }}">+ Add Patient</a>
+        </button>
+    </div>
 
     <!-- Tableau des patients invalidés-->
     <h2>Patients à valider</h2>
@@ -96,7 +98,7 @@
         });
 
         // JavaScript pour rechercher tous les utilisateurs
-        document.getElementById('searchAllButton').addEventListener('click', function(event) {
+        document.getElementById('cancel-btn').addEventListener('click', function(event) {
             // Empêcher le comportement par défaut du bouton (changement d'URL)
             event.preventDefault();
             // Rediriger vers la route de vue des patients sans aucun paramètre de recherche
