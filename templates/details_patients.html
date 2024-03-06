@@ -13,9 +13,41 @@
     <h2>Prediction : {{ patient.prediction }}</h2>
     <!-- Utilisation de l'image encodée en base64 -->
     <img src="data:image/jpeg;base64,{{ patient.encoded_image }}" alt="Patient Tumor Image">
-    <form action="/validate_patient/{{ patient.id }}" method="POST">
-        <button type="submit" name="validate">Valider</button>
-        <button type="submit" name="reject">Ne pas valider</button>
+    <form id="validateForm" action="/validate_patient/patients/{{ patient.id }}" method="POST">
+        <button id="validateBtn" type="button" name="validate">Valider</button>
+        <button id="unvalidateBtn" type="button" name="unvalidate">Ne pas valider</button>
     </form>
+    <script>
+        async function updateValidation(validationValue) {
+            const patientName = "{{ patient.name }}";
+            const patientId = "{{ patient.id }}";
+            const formData = new FormData();
+            formData.append('validation', validationValue);
+            try {
+                const response = await fetch(`/validate_patient/{{ patient.id }}`, {
+                    method: 'POST',
+                    body: formData
+                });
+                if (!response.ok) {
+                    throw new Error('Failed to update validation');
+                }
+                console.log('Validation updated successfully');
+                // Redirect or update UI as needed
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        const validateButton = document.getElementById('validateBtn');
+        validateButton.addEventListener('click', () => {
+            updateValidation('valide');
+        });
+
+        const unvalidateButton = document.getElementById('unvalidateBtn');
+        unvalidateButton.addEventListener('click', () => {
+            updateValidation('non-valide');
+        });
+    </script>
 </body>
 </html>
+

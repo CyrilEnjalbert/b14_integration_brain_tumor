@@ -1,1 +1,0 @@
-logged_model = 'runs:/2643540303a44773955ae0cd8d441403/models'

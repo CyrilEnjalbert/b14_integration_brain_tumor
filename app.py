@@ -1,21 +1,27 @@
 import uvicorn
-import requests
-
+from fastapi import FastAPI, Request, HTTPException
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse, Response
 from pymongo import MongoClient
 from bson import ObjectId
 from pydantic import BaseModel
 from typing import Optional
+import requests
+from mongo_string import mongo_string
 from fastapi import FastAPI, Request
-from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
-from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse, Response
-from weasyprint import HTML
+from pymongo import MongoClient
+from bson import ObjectId
+import requests
+from fastapi.responses import RedirectResponse
+from pydantic import BaseModel
 
+#from weasyprint import HTML
 
 app = FastAPI()
 
 # Connexion à la base de données MongoDB
-client = MongoClient("mongodb://localhost:27017")
+client = MongoClient(mongo_string)
 db = client["braintumor"]  # Remplacez "your_database_name" par le nom de votre base de données MongoDB
 
 
@@ -24,18 +30,18 @@ class PatientModel(BaseModel):
     name: str
     age: int
     gender: str
-    image: str
-    # prediction: float
-    # validation: str
-    
+    image: bytes
+    prediction: Optional[float] 
+    validation: Optional[str] = "En attente de validation"
+
 # Modèles Pydantic pour la modification du patient
 class PatientUpdateModel(BaseModel):
     name: str
     age: int
     gender: str
-    image: str
-    # prediction: float
-    # validation: str
+    image: bytes
+    prediction: Optional[float]
+    validation: Optional[str]
 
 # Modèles Pydantic pour la visualisation des patients
 class PatientViewModel(BaseModel):
@@ -43,9 +49,8 @@ class PatientViewModel(BaseModel):
     age: int
     gender: str
     id: str
-    prediction: float
-    # validation: str
-
+    prediction: Optional[float] 
+    validation: Optional[str] = "En attente de validation"
     
 # Modèle Pydantic pour les prédictions (à adapter selon vos besoins)
 class PredictionModel(BaseModel):
@@ -87,11 +92,13 @@ async def add_patient_post(patient: PatientModel):
     # Insérer le patient dans la base de données
     patient_data = patient.dict()
 
+    print(patient)
+
     db.patients.insert_one(patient_data)
     # URL of the FastAPI endpoint
 
     # Send a POST request to the endpoint
-    requests.post("http://localhost:8000/predict")
+    requests.post( f"http://localhost:8000/predict")
     return JSONResponse(content={"redirect_url": "/view_patients"})
 
 
@@ -118,7 +125,10 @@ async def edit_patient_post(patient_id: str, patient: PatientUpdateModel):
     db.patients.update_one({"_id": ObjectId(patient_id)}, {"$set": patient.model_dump()})
     return RedirectResponse(url="/view_patients")
 
+
+
 # --------------------------------------------
+
 
 
 import base64
@@ -226,6 +236,38 @@ async def details_patients(request: Request, patient_id: str):
         return templates.TemplateResponse("details_patients.html", {"request": request, "patient": patient})
     else:
         return JSONResponse(content={"message": "Patient not found."}, status_code=404)
+
+# Modèle Pydantic pour la modification du champ de validation
+class ValidationUpdateModel(BaseModel):
+    validation: str
+
+# FastAPI endpoint to update the validation field of a patient
+@app.post("/validate_patient/{patient_id}", response_class=HTMLResponse)
+async def validate_patient_post(request: Request, patient_id: str, validation_status: str):
+    form_data = await request.form()
+
+    validation_status = form_data.get('validation')
+    patient = db.patients.find_one({"_id": ObjectId(patient_id)})
+
+    if validation_status == 'valide':
+        
+        # Update validation status to "valide"
+            # Récupérer les informations du patient depuis la base de données
+        db.patients.update_one({"_id": ObjectId(patient_id)},  {"$set": {patient.validation : "valide"}})
+        print("Patient validated successfully")      
+    elif validation_status == 'non-valide':
+        # Update validation status to "non-valide"
+        db.patients.update_one({"_id": ObjectId(patient_id)}, {"$set": {patient.validation:  "non-valide"}})
+        print("Patient unvalidated successfully")
+        
+        # Send a POST request to the feedback endpoint
+        requests.post("http://localhost:8000/feedback")
+        print("Feedback reported successfully")
+
+    else:
+        print("Error in validation of patient")
+
+    return {"message": "Validation status updated successfully"}
 
 if __name__ == '__main__':
     import uvicorn    
