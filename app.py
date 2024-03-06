@@ -1,13 +1,14 @@
 import uvicorn
-from fastapi import FastAPI, Request
-from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
-from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse, Response
+import requests
+
 from pymongo import MongoClient
 from bson import ObjectId
 from pydantic import BaseModel
 from typing import Optional
-import requests
+from fastapi import FastAPI, Request
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse, Response
 from weasyprint import HTML
 
 
@@ -23,8 +24,8 @@ class PatientModel(BaseModel):
     name: str
     age: int
     gender: str
-    image: bytes
-    #prediction: float
+    image: str
+    # prediction: float
     # validation: str
     
 # Modèles Pydantic pour la modification du patient
@@ -32,7 +33,7 @@ class PatientUpdateModel(BaseModel):
     name: str
     age: int
     gender: str
-    image: bytes
+    image: str
     # prediction: float
     # validation: str
 

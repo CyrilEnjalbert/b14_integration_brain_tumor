@@ -9,6 +9,11 @@ h1, h2, h3 {
     color: #333;
 }
 
+h1 {
+    border-bottom: 1px solid #333;
+    padding-bottom: 20px;
+}
+
 form {
     max-width: 400px;
     margin: 20px auto;
@@ -41,6 +46,7 @@ button {
 
 button:hover {
     background-color: #45a049;
+    box-shadow: 1px 1px 3px #b8b8b8;
 }
 
 table {
@@ -58,4 +64,94 @@ th, td {
 th {
     background-color: #4caf50;
     color: white;
+    text-align: center;
+}
+
+.icon-cell {
+    text-align: center;
+}
+
+.icon-cell i {
+    color: #4b4b4b;
+    margin: 0 10px;
+}
+.icon-cell i:hover {
+    color: #272727;
+}
+
+#actions-container {
+    display: flex;
+    justify-content: flex-start;
+    margin: 30px 0;
+}
+
+#actions-container > * {
+    margin-right: 100px;
+}
+
+#searchForm {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0;
+    margin: 0 100px 0 0;
+    min-width: 400px;
+}
+
+#searchForm input {
+    margin-bottom: 0;
+    max-width: 250px;
+}
+
+.add-btn {
+    background-color: #5ead60;
+    box-shadow: inset 0 0 0 2px #9fd8a1;
+}
+.add-btn:hover {
+    box-shadow: inset 0 0 0 2px #9fd8a1;
+}
+
+.add-btn a {
+    text-decoration: none;
+    color: whitesmoke;
+}
+
+button.tablinks,
+#cancel-btn {
+    background-color: #b8b8b8;
+}
+button.tablinks:hover,
+#cancel-btn:hover {
+    background-color: #a0a0a0;
+}
+
+
+/* Background colors for active tab buttons and headers */
+
+/* To Validate */
+button.to-validate-btn.active,
+#to-validate th {
+    background-color: rgb(223, 169, 53);
+}
+button.to-validate-btn.active:hover {
+    background-color: rgb(216, 160, 40);
+}
+
+/* Corrected */
+button.corrected-btn.active,
+#corrected th {
+    background-color: rgb(153, 41, 41);
+}
+button.corrected-btn.active:hover {
+    background-color: rgb(133, 40, 40);
+}
+
+/* Validated */
+button.validated-btn.active,
+#validated th {
+    background-color: #4caf50;
+}
+button.validated-btn.active:hover {
+    background-color: #45a049;
 }
