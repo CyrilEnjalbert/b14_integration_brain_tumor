@@ -86,13 +86,6 @@ th {
     max-width: 250px;
 }
 
-#cancel-btn {
-    background-color: #686868;
-}
-#cancel-btn:hover {
-    background-color: #747474;
-}
-
 .add-btn {
     background-color: #5ead60;
     box-shadow: inset 0 0 0 2px #9fd8a1;
@@ -104,4 +97,42 @@ th {
 .add-btn a {
     text-decoration: none;
     color: whitesmoke;
+}
+
+button.tablinks,
+#cancel-btn {
+    background-color: #b8b8b8;
+}
+button.tablinks:hover,
+#cancel-btn:hover {
+    background-color: #a0a0a0;
+}
+
+/* Background colors for active tab buttons and headers */
+
+/* To Validate */
+button.to-validate-btn.active,
+#to-validate th {
+    background-color: rgb(223, 169, 53);
+}
+button.to-validate-btn.active:hover {
+    background-color: rgb(216, 160, 40);
+}
+
+/* Corrected */
+button.corrected-btn.active,
+#corrected th {
+    background-color: rgb(153, 41, 41);
+}
+button.corrected-btn.active:hover {
+    background-color: rgb(133, 40, 40);
+}
+
+/* Validated */
+button.validated-btn.active,
+#validated th {
+    background-color: #4caf50;
+}
+button.validated-btn.active:hover {
+    background-color: #45a049;
 }
