@@ -15,12 +15,12 @@
             <h2>ID : {{ patient.id }}</h2>
             <h2>Nom : {{ patient.name }}</h2>
             <h2>Age : {{ patient.age }}</h2>
-            <h2>Prediction d'une tumeur : {{ patient.prediction }} %</h2>
             <!-- Utilisation de l'image encodée en base64 -->
             <img src="data:image/jpeg;base64,{{ patient.encoded_image }}" alt="Patient Tumor Image">
+            <h2 id="pred">{{ patient.prediction }} %</h2>
             <form action="/validate_patient/{{ patient.id }}" method="POST" id="validation-form">
-                <button type="submit" name="validate">Valider</button>
-                <button type="submit" name="reject">Ne pas valider</button>
+                <button type="submit" name="validate" id="ok">Confirmer</button>
+                <button type="submit" name="reject" id="not-ok">Infirmer</button>
             </form>
         </div>
     </body>

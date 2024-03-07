@@ -64,6 +64,25 @@ button:hover {
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 
+#validation-form {
+    display: flex;
+    justify-content: space-between;
+    background: none;
+    box-shadow: none;
+    max-width: 200px;
+}
+
+#pred {
+    text-align: center;
+}
+
+#not-ok {
+    background-color: rgb(153, 41, 41);
+}
+#not-ok:hover {
+    background-color: rgb(133, 40, 40);
+}
+
 img {
     display: block;
     margin: auto;
