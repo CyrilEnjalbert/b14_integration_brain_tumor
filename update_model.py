@@ -1,24 +1,23 @@
 import os
 import random
-import numpy as np
 import mlflow
 import mlflow.keras
+import tensorflow as tf
+
 from keras.applications import VGG16
-from keras.applications.vgg16 import preprocess_input
 from keras.models import Sequential
 from keras.layers import Dense, Flatten, BatchNormalization, Dropout
 from keras.optimizers import RMSprop
 from keras.preprocessing.image import ImageDataGenerator
 from keras.callbacks import EarlyStopping
-import tensorflow as tf
-from sklearn.metrics import recall_score, precision_score, roc_auc_score, roc_curve
-from keras.metrics import Precision, Recall, Accuracy
 from mlflow.tracking import MlflowClient
-from fonctions.data_loading import load_images, create_dir, format_filename
+
+from fonctions.data_loading import *
 from fonctions.data_processing import normalize_images
 
 
-# ---------------------------------- Data Loading ---------------------------------
+
+# Data loading ------
 
 random.seed(422)
 tf.random.set_seed(422)
@@ -38,7 +37,9 @@ X_train, y_train = load_images(train_path)
 X_val, y_val = load_images(val_path)
 X_test, y_test = load_images(test_path)
 
-# ---------------------------------- Data-Processing ---------------------------------
+
+
+# Data processing ------
 
 # Utilisation de la fonction avec X (images non normalisées) et la taille cible
 target_size = (224, 224)
@@ -46,8 +47,9 @@ X_train_norm = normalize_images(X_train, target_size)
 X_val_norm = normalize_images(X_val, target_size)
 X_test_norm = normalize_images(X_test, target_size)
 
-# ---------------------------------- Trainning and Testing Model ---------------------------------
 
+
+# Training and testing model ------
 
 os.environ['CUDA_VISIBLE_DEVICES'] = '1'
 
@@ -65,7 +67,7 @@ model.add(BatchNormalization())
 model.add(Dropout(0.5))
 model.add(Dense(NUM_CLASSES, activation='sigmoid'))
 
-# figer les poids du VGG
+# Figer les poids du VGG
 model.layers[0].trainable = False
 
 # Compiler le modèle
@@ -107,13 +109,15 @@ BATCH_SIZE = 16
 
 print("Model successfully loaded and created.")
 
-# ---------------------------------- Saving Model, Params and Metrics ---------------------------------
+
+
+# Saving model, params and metrics ------
 
 # Evaluate the model
 model.evaluate(X_test_norm, y_test) 
 
 try: 
-    
+
     mlflow.set_tracking_uri("http://127.0.0.1:5000")
     model_name = "b14_tumor_detection_model"
     
@@ -138,9 +142,8 @@ try:
         description="C'est un modèle destiné à détecter des tumeurs cérébrales.",
     )
 
-
     print("Model successfully uploaded.")
-    
+
 except Exception as e:
     # You can handle the exception here as needed
     print(f"An error occurred: {str(e)}")
