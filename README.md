@@ -39,6 +39,9 @@ project/
 ```
 
 ### Procédure 
+-> Importer la base de données, créer et stocker dans un fichier "raw" dans un fichier "data": 
+https://www.kaggle.com/datasets/navoneel/brain-mri-images-for-brain-tumor-detection
+
 -> Rentrer votre "connection string" fournie par Mongo DB dans le champ prévu à cet effet dans config/paths.py
 
 -> Si besoin créer manuellement une Database "braintumor" et une collection "patients" depuis votre interface Mongo DB
