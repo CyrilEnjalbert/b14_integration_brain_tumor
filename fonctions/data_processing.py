@@ -13,7 +13,8 @@ def normalize_images(X, target_size):
         if len(img.shape) == 3:
             # Convertir en niveaux de gris si c'est pas déjà le cas
             gray_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-
+        else:
+            gray_img = img
         # Appliquer un filtre pour supprimer le bruit (par exemple, un filtre gaussien)
         denoised_img = cv2.GaussianBlur(gray_img, (5, 5), 0)
 

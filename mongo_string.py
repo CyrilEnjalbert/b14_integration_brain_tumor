@@ -1,1 +1,1 @@
-mongo_string = "mongodb://root:example@localhost:27017/"
+mongo_string = "mongodb://localhost:27017"

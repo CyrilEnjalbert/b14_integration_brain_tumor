@@ -16,7 +16,6 @@ from mlflow import MlflowClient
 import cv2
 
 
-
 app = FastAPI()
 
 os.environ['CUDA_VISIBLE_DEVICES'] = '1'
@@ -42,11 +41,20 @@ client = MlflowClient()
 
 # ---------------------------------- Mongo DB  --------------------------------- 
 
-mongo_string = "mongodb://root:example@localhost:27017/"
+mongo_string = "mongodb://localhost:27017"
 
 # Connexion à la base de données MongoDB
 client = MongoClient(mongo_string)
 db = client["braintumor"]
+
+class PatientModel(BaseModel):
+    name: str
+    age: int
+    gender: str
+    image: bytes
+    prediction: Optional[float] = None
+    validation: Optional[str] = None
+    
 
 
 
@@ -60,6 +68,8 @@ def normalize_images(X, target_size):
         if len(img.shape) == 3:
             # Convertir en niveaux de gris si c'est pas déjà le cas
             gray_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        else:
+            gray_img = img
 
         # Appliquer un filtre pour supprimer le bruit (par exemple, un filtre gaussien)
         denoised_img = cv2.GaussianBlur(gray_img, (5, 5), 0)
@@ -87,16 +97,6 @@ def normalize_images(X, target_size):
     return np.array(normalized_images)
 
 
-
-# Modèle Pydantic pour les données du patient
-class PatientModel(BaseModel):
-    name: str
-    age: int
-    gender: str
-    image: bytes
-    prediction: Optional[float]
-    validation: Optional[str] = "En attente de validation"
-    
 
 # Fonction pour prétraiter l'image
 def preprocess_image(image):
