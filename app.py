@@ -46,6 +46,16 @@ class PatientViewModel(BaseModel):
     prediction: float
     # validation: str
 
+# Modèles Pydantic pour la details view des patients
+class PatientDetailsModel(BaseModel):
+    name: str
+    age: int
+    gender: str
+    id: str
+    prediction: float
+    encoded_image: str
+    # validation: str
+
     
 # Modèle Pydantic pour les prédictions (à adapter selon vos besoins)
 class PredictionModel(BaseModel):
@@ -207,25 +217,37 @@ async def download_pdf_predict(patient_id: str):
     except Exception as e:
         return JSONResponse(content={"message": "An error occurred while generating the PDF."}, status_code=500)
 
-# Dans votre route FastAPI pour afficher les détails du patient
 @app.get("/details_patients/{patient_id}", response_class=HTMLResponse)
 async def details_patients(request: Request, patient_id: str):
-    # Récupérer les informations du patient depuis la base de données
     patient = db.patients.find_one({"_id": ObjectId(patient_id)})
     if patient:
-        # Décoder l'image base64
         # Récupérer l'image depuis la base de données
-        image_bytes = patient['image']
-
-            # Décodez l'image base64
-        image_data = base64.b64decode(image_bytes)
-
-            # Balise d'image HTML avec la chaîne base64 de l'image
-        image_html = f"<img src='data:image/jpeg;base64,{image_bytes}' />"
-
-        return templates.TemplateResponse("details_patients.html", {"request": request, "patient": patient})
+        image_data = patient['image']
+        if isinstance(image_data, str):
+            # Si les données sont déjà encodées en base64, pas besoin de les ré-encoder
+            encoded_image = image_data
+        else:
+            # Encodez les données en base64
+            encoded_image = base64.b64encode(image_data).decode('utf-8')
+        # Convertir la prédiction en pourcentage et formater avec deux chiffres après la virgule
+        prediction_percentage = "{:.2f}".format(patient.get('prediction', 0.0) * 100)
+        # Créez l'instance de PatientDetailsModel en spécifiant les champs nécessaires
+        patient_view_model = PatientDetailsModel(
+            id=str(patient['_id']),
+            name=patient['name'],
+            age=patient['age'],
+            gender=patient['gender'],
+            prediction=prediction_percentage,  # Convertir la prédiction en pourcentage
+            encoded_image=encoded_image
+        )
+        return templates.TemplateResponse("details_patients.html", {"request": request, "patient": patient_view_model})
     else:
-        return JSONResponse(content={"message": "Patient not found."}, status_code=404)
+        return Response(content="Patient not found.", status_code=404)
+
+
+
+
+
 
 if __name__ == '__main__':
     import uvicorn    

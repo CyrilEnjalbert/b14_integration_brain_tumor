@@ -4,18 +4,82 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" type="text/css" href="http://localhost:8010/static/styles.css">        
+    <link rel="stylesheet" type="text/css" href="http://localhost:8010/static/styles.css">  
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        h2 {
+            font-size: 18px;
+            margin-bottom: 10px;
+            color: #666;
+        }
+        img {
+            display: block;
+            margin: auto;
+            max-width: 100%;
+            border-radius: 8px;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+        }
+        form {
+            text-align: center;
+            margin-top: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 0 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .back-btn {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            text-decoration: none;
+            color: #333;
+            font-size: 16px;
+        }
+    </style>
 </head>
 <body>
-    <h1>Détails du patient</h1>
-    <h2>Nom : {{ patient.name }}</h2>
-    <h2>Age : {{ patient.age }}</h2>
-    <h2>Prediction : {{ patient.prediction }}</h2>
-    <!-- Utilisation de l'image encodée en base64 -->
-    <img src="data:image/jpeg;base64,{{ patient.encoded_image }}" alt="Patient Tumor Image">
-    <form action="/validate_patient/{{ patient.id }}" method="POST">
-        <button type="submit" name="validate">Valider</button>
-        <button type="submit" name="reject">Ne pas valider</button>
-    </form>
+    <a class="back-btn" href="/view_patients">Retour</a>
+    <div class="container">
+        <h1>Détails du patient</h1>
+        <h2>ID : {{ patient.id }}</h2>
+        <h2>Nom : {{ patient.name }}</h2>
+        <h2>Age : {{ patient.age }}</h2>
+        <h2>Prediction d'une tumeur : {{ patient.prediction }} %</h2>
+        <!-- Utilisation de l'image encodée en base64 -->
+        <img src="data:image/jpeg;base64,{{ patient.encoded_image }}" alt="Patient Tumor Image">
+        <form action="/validate_patient/{{ patient.id }}" method="POST">
+            <button type="submit" name="validate">Valider</button>
+            <button type="submit" name="reject">Ne pas valider</button>
+        </form>
+    </div>
 </body>
 </html>
