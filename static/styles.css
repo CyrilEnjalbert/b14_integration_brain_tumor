@@ -14,6 +14,12 @@ h1 {
     padding-bottom: 20px;
 }
 
+h2 {
+    font-size: 18px;
+    margin-bottom: 10px;
+    color: #666;
+}
+
 form {
     max-width: 400px;
     margin: 20px auto;
@@ -47,6 +53,24 @@ button {
 button:hover {
     background-color: #45a049;
     box-shadow: 1px 1px 3px #b8b8b8;
+}
+
+.container {
+    max-width: 800px;
+    margin: auto;
+    padding: 20px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+img {
+    display: block;
+    margin: auto;
+    max-width: 100%;
+    border-radius: 8px;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+    margin-top: 20px;
 }
 
 table {

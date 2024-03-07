@@ -1,10 +1,9 @@
-# ---------------------------------- Imports ---------------------------------
-
 import numpy as np
 import cv2
 
-# ---------------------------------- Data Processing  ---------------------------------    
 
+
+# Data processing ------
 
 def normalize_images(X, target_size):
     normalized_images = [None] * len(X)
@@ -39,4 +38,3 @@ def normalize_images(X, target_size):
             normalized_images[i] = cv2.resize(img, target_size, interpolation=cv2.INTER_AREA)
 
     return np.array(normalized_images)
-

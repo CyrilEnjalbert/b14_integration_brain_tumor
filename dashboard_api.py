@@ -1,26 +1,24 @@
 import uvicorn
-from fastapi import FastAPI, Request, HTTPException
-from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
-from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse, Response
+import requests
+import base64
+
 from pymongo import MongoClient
 from bson import ObjectId
 from pydantic import BaseModel
 from typing import Optional
-import requests
-from mongo_string import mongo_string
-from fastapi import FastAPI, Request
-from pymongo import MongoClient
-from bson import ObjectId
-import requests
-from fastapi.responses import RedirectResponse
-from pydantic import BaseModel
 from weasyprint import HTML
+from fastapi import FastAPI, Request
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse, Response
+
+from config.paths import mongo_path
+
 
 app = FastAPI()
 
 # Connexion à la base de données MongoDB
-client = MongoClient(mongo_string)
+client = MongoClient(mongo_path)
 db = client["braintumor"]  # Remplacez "your_database_name" par le nom de votre base de données MongoDB
 
 
@@ -75,26 +73,10 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
 
-@app.get("/search_patients", response_class=HTMLResponse)
-async def search_patients(request: Request, search: Optional[str] = None):
-    if search:
-        patients_from_db = db.patients.find({"name": {"$regex": search, "$options": "i"}})
-    else:
-        return RedirectResponse(url="/view_patients")   
-    patients = [PatientViewModel(id=str(patient['_id']), **patient) for patient in patients_from_db]
-    return templates.TemplateResponse("view_patients.html", {"request": request, "patients": patients})
-
-@app.get("/view_image/{patient_id}", response_class=HTMLResponse)
-async def view_image(request: Request, patient_id: str):
-    # Récupérer les informations du patient pour affichage dans la page view_image.html
-    patient = PatientModel(**db.patients.find_one({"_id": ObjectId(patient_id)}))
-    return templates.TemplateResponse("view_image.html", {"request": request, "patient": patient})
-
 # Route pour ajouter un patient
 @app.get("/add_patient", response_class=HTMLResponse)
 def add_patient(request: Request):
     return templates.TemplateResponse("add_patient.html", {"request": request})
-
 
 @app.post("/add_patient")
 async def add_patient_post(patient: PatientModel):
@@ -127,7 +109,6 @@ async def edit_patient(request: Request, patient_id: str):
     return templates.TemplateResponse("edit_patient.html", {"request": request, "patient": patient,
                                                             "patient_id": patient_id})
 
-
 @app.post("/edit_patient/{patient_id}")
 async def edit_patient_post(patient_id: str, patient: PatientUpdateModel):
     # Mettre à jour le patient dans la base de données
@@ -135,12 +116,22 @@ async def edit_patient_post(patient_id: str, patient: PatientUpdateModel):
     return RedirectResponse(url="/view_patients")
 
 
+@app.get("/search_patients", response_class=HTMLResponse)
+async def search_patients(request: Request, search: Optional[str] = None):
+    if search:
+        patients_from_db = db.patients.find({"name": {"$regex": search, "$options": "i"}})
+    else:
+        return RedirectResponse(url="/view_patients")   
+    patients = [PatientViewModel(id=str(patient['_id']), **patient) for patient in patients_from_db]
+    return templates.TemplateResponse("view_patients.html", {"request": request, "patients": patients})
 
-# --------------------------------------------
 
+@app.get("/view_image/{patient_id}", response_class=HTMLResponse)
+async def view_image(request: Request, patient_id: str):
+    # Récupérer les informations du patient pour affichage dans la page view_image.html
+    patient = PatientModel(**db.patients.find_one({"_id": ObjectId(patient_id)}))
+    return templates.TemplateResponse("view_image.html", {"request": request, "patient": patient})
 
-
-import base64
 
 @app.get("/download_pdf_predict/{patient_id}")
 async def download_pdf_predict(patient_id: str):
@@ -228,6 +219,7 @@ async def download_pdf_predict(patient_id: str):
     except Exception as e:
         return JSONResponse(content={"message": "An error occurred while generating the PDF."}, status_code=500)
 
+
 # Dans votre route FastAPI pour afficher les détails du patient
 @app.get("/details_patients/{patient_id}", response_class=HTMLResponse)
 async def details_patients(request: Request, patient_id: str):
@@ -256,9 +248,11 @@ async def details_patients(request: Request, patient_id: str):
     else:
         return Response(content="Patient not found.", status_code=404)
 
+
 # Modèle Pydantic pour la modification du champ de validation
 class ValidationUpdateModel(BaseModel):
     validation: str
+
 
 # FastAPI endpoint to update the validation field of a patient
 @app.post("/validate_patient/{patient_id}", response_class=HTMLResponse)
@@ -287,6 +281,7 @@ async def validate_patient_post(request: Request, patient_id: str, validation_st
         print("Error in validation of patient")
 
     return {"message": "Validation status updated successfully"}
+
 
 if __name__ == '__main__':
     import uvicorn    

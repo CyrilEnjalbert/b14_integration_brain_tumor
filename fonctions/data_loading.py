@@ -1,9 +1,7 @@
-# ---------------------------------- Imports ---------------------------------
 import os
 import shutil
 import numpy as np
 import cv2
-
 
 
 
@@ -12,6 +10,7 @@ def format_filename(suffix_number, padding=5, prefix="img_", extension="jpeg"):
     filename = f"{prefix}{formatted_number}.{extension}"
     return filename
 
+
 def create_dir(directory_path, remove_if_exists=True):
     # Supprimer le répertoire existant s'il existe
     if os.path.exists(directory_path) and remove_if_exists:
@@ -19,9 +18,8 @@ def create_dir(directory_path, remove_if_exists=True):
 
     # Créer le nouveau répertoire
     os.makedirs(directory_path, exist_ok=(not remove_if_exists))
-    
-    
-    
+
+
 def load_images(path_to_folder):
     # Liste des classes (dossiers "yes" et "no")
     classes = ["yes", "no"]

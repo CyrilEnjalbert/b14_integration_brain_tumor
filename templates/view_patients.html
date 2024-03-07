@@ -1,153 +1,153 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>View Patients</title>
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', path='styles.css') }}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-</head>
-<body>
-    <h1>View Patients</h1>
-    
-    <div id="actions-container">
-        <!-- Tabs for different tables -->
-        <div class="tabs">
-            <button class="tablinks to-validate-btn" onclick="openTable(event, 'to-validate')" id="defaultOpen">To Validate</button>
-            <button class="tablinks corrected-btn" onclick="openTable(event, 'corrected')">Corrected</button>
-            <button class="tablinks validated-btn" onclick="openTable(event, 'validated')">Validated</button>
+    <head>
+        <meta charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>View Patients</title>
+        <link rel="stylesheet" type="text/css" href="{{ url_for('static', path='styles.css') }}">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    </head>
+    <body>
+        <h1>View Patients</h1>
+        
+        <div id="actions-container">
+            <!-- Tabs for different tables -->
+            <div class="tabs">
+                <button class="tablinks to-validate-btn" onclick="openTable(event, 'to-validate')" id="defaultOpen">To Validate</button>
+                <button class="tablinks corrected-btn" onclick="openTable(event, 'corrected')">Corrected</button>
+                <button class="tablinks validated-btn" onclick="openTable(event, 'validated')">Validated</button>
+            </div>
+            <form id="searchForm" method="GET" action="/search_patients">
+                <input type="text" id="searchInput" name="search" placeholder="Search for a patient...">
+                <button type="submit">Search</button>
+                <button type="button" id="cancel-btn">Cancel</button>
+            </form>
+            <button class="add-btn">
+                <a href="{{ url_for('add_patient') }}">+ Add Patient</a>
+            </button>
         </div>
-        <form id="searchForm" method="GET" action="/search_patients">
-            <input type="text" id="searchInput" name="search" placeholder="Search for a patient...">
-            <button type="submit">Search</button>
-            <button type="button" id="cancel-btn">Cancel</button>
-        </form>
-        <button class="add-btn">
-            <a href="{{ url_for('add_patient') }}">+ Add Patient</a>
-        </button>
-    </div>
 
-    <!-- Table for Predictions to Validate -->
-    <div id="to-validate" class="tabcontent">
-        <table border="1">
-            <thead>
-                <tr>
-                    <th>Name</th>
-                    <th>Age</th>
-                    <th>Gender</th>
-                    <th>Prediction</th>
-                    <th>Validation</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for patient in patients %}
+        <!-- Table for Predictions to Validate -->
+        <div id="to-validate" class="tabcontent">
+            <table border="1">
+                <thead>
                     <tr>
-                        <td>{{ patient.name }}</td>
-                        <td>{{ patient.age }}</td>
-                        <td>{{ patient.gender }}</td>                   
-                        <td>{{ patient.prediction }}</td>
-                        <td class="icon-cell"><a href="{{ url_for('details_patients', patient_id=patient.id) }}"><i class="fas fa-eye"></i></a></td>
-                        <td class="icon-cell">
-                            <a href="{{ url_for('edit_patient', patient_id=patient.id) }}"><i class="fas fa-edit"></i></a>
-                            <a href="{{ url_for('download_pdf_predict', patient_id=patient.id) }}"><i class="fas fa-download"></i></a>
-                        </td>
+                        <th>Name</th>
+                        <th>Age</th>
+                        <th>Gender</th>
+                        <th>Prediction</th>
+                        <th>Validation</th>
+                        <th>Actions</th>
                     </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+                </thead>
+                <tbody>
+                    {% for patient in patients %}
+                        <tr>
+                            <td>{{ patient.name }}</td>
+                            <td>{{ patient.age }}</td>
+                            <td>{{ patient.gender }}</td>                   
+                            <td>{{ patient.prediction }}</td>
+                            <td class="icon-cell"><a href="{{ url_for('details_patients', patient_id=patient.id) }}"><i class="fas fa-eye"></i></a></td>
+                            <td class="icon-cell">
+                                <a href="{{ url_for('edit_patient', patient_id=patient.id) }}"><i class="fas fa-edit"></i></a>
+                                <a href="{{ url_for('download_pdf_predict', patient_id=patient.id) }}"><i class="fas fa-download"></i></a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
 
-    <!-- Table for Corrected Predictions -->
-    <div id="corrected" class="tabcontent">
-        <table border="1">
-            <thead>
-                <tr>
-                    <th>Name</th>
-                    <th>Age</th>
-                    <th>Gender</th>
-                    <th>Prediction</th>
-                    <th>Doctor's opinion</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for patient in patients %}
+        <!-- Table for Corrected Predictions -->
+        <div id="corrected" class="tabcontent">
+            <table border="1">
+                <thead>
                     <tr>
-                        <td>{{ patient.name }}</td>
-                        <td>{{ patient.age }}</td>
-                        <td>{{ patient.gender }}</td>                   
-                        <td>{{ patient.prediction }}</td>
-                        <td>{{ patient.validation }}</td>
-                        <td class="icon-cell">
-                            <a href="{{ url_for('edit_patient', patient_id=patient.id) }}"><i class="fas fa-edit"></i></a>
-                            <a href="{{ url_for('download_pdf_predict', patient_id=patient.id) }}"><i class="fas fa-download"></i></a>
-                        </td>
+                        <th>Name</th>
+                        <th>Age</th>
+                        <th>Gender</th>
+                        <th>Prediction</th>
+                        <th>Doctor's opinion</th>
+                        <th>Actions</th>
                     </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+                </thead>
+                <tbody>
+                    {% for patient in patients %}
+                        <tr>
+                            <td>{{ patient.name }}</td>
+                            <td>{{ patient.age }}</td>
+                            <td>{{ patient.gender }}</td>                   
+                            <td>{{ patient.prediction }}</td>
+                            <td>{{ patient.validation }}</td>
+                            <td class="icon-cell">
+                                <a href="{{ url_for('edit_patient', patient_id=patient.id) }}"><i class="fas fa-edit"></i></a>
+                                <a href="{{ url_for('download_pdf_predict', patient_id=patient.id) }}"><i class="fas fa-download"></i></a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
 
-    <!-- Table for Validated Predictions -->
-    <div id="validated" class="tabcontent">
-        <table border="1">
-            <thead>
-                <tr>
-                    <th>Name</th>
-                    <th>Age</th>
-                    <th>Gender</th>
-                    <th>Prediction</th>
-                    <th>Doctor's opinion</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for patient in patients %}
+        <!-- Table for Validated Predictions -->
+        <div id="validated" class="tabcontent">
+            <table border="1">
+                <thead>
                     <tr>
-                        <td>{{ patient.name }}</td>
-                        <td>{{ patient.age }}</td>
-                        <td>{{ patient.gender }}</td>                   
-                        <td>{{ patient.prediction }}</td>
-                        <td>{{ patient.validation }}</td>
-                        <td class="icon-cell">
-                            <a href="{{ url_for('details_patients', patient_id=patient.id) }}"><i class="fas fa-edit"></i></a>
-                            <a href="{{ url_for('download_pdf_predict', patient_id=patient.id) }}"><i class="fas fa-download"></i></a>
-                        </td>
+                        <th>Name</th>
+                        <th>Age</th>
+                        <th>Gender</th>
+                        <th>Prediction</th>
+                        <th>Doctor's opinion</th>
+                        <th>Actions</th>
                     </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+                </thead>
+                <tbody>
+                    {% for patient in patients %}
+                        <tr>
+                            <td>{{ patient.name }}</td>
+                            <td>{{ patient.age }}</td>
+                            <td>{{ patient.gender }}</td>                   
+                            <td>{{ patient.prediction }}</td>
+                            <td>{{ patient.validation }}</td>
+                            <td class="icon-cell">
+                                <a href="{{ url_for('edit_patient', patient_id=patient.id) }}"><i class="fas fa-edit"></i></a>
+                                <a href="{{ url_for('download_pdf_predict', patient_id=patient.id) }}"><i class="fas fa-download"></i></a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
 
-    <script>
-        function openTable(evt, tableName) {
-            var i, tabcontent, tablinks;
-            tabcontent = document.getElementsByClassName("tabcontent");
-            for (i = 0; i < tabcontent.length; i++) {
-                tabcontent[i].style.display = "none";
+        <script>
+            function openTable(evt, tableName) {
+                var i, tabcontent, tablinks;
+                tabcontent = document.getElementsByClassName("tabcontent");
+                for (i = 0; i < tabcontent.length; i++) {
+                    tabcontent[i].style.display = "none";
+                }
+                tablinks = document.getElementsByClassName("tablinks");
+                for (i = 0; i < tablinks.length; i++) {
+                    tablinks[i].className = tablinks[i].className.replace(" active", "");
+                }
+                document.getElementById(tableName).style.display = "block";
+                evt.currentTarget.className += " active";
             }
-            tablinks = document.getElementsByClassName("tablinks");
-            for (i = 0; i < tablinks.length; i++) {
-                tablinks[i].className = tablinks[i].className.replace(" active", "");
-            }
-            document.getElementById(tableName).style.display = "block";
-            evt.currentTarget.className += " active";
-        }
 
-        document.getElementById("defaultOpen").click();
+            document.getElementById("defaultOpen").click();
 
-        document.getElementById('searchForm').addEventListener('submit', function(event) {
-            event.preventDefault();
-            const searchInput = document.getElementById('searchInput').value;
-            window.location.href = '/search_patients?search=' + searchInput;
-        });
+            document.getElementById('searchForm').addEventListener('submit', function(event) {
+                event.preventDefault();
+                const searchInput = document.getElementById('searchInput').value;
+                window.location.href = '/search_patients?search=' + searchInput;
+            });
 
-        document.getElementById('cancel-btn').addEventListener('click', function(event) {
-            event.preventDefault();
-            window.location.href = '/view_patients';
-        });
-    </script>
-</body>
+            document.getElementById('cancel-btn').addEventListener('click', function(event) {
+                event.preventDefault();
+                window.location.href = '/view_patients';
+            });
+        </script>
+    </body>
 </html>

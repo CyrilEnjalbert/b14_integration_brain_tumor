@@ -1,32 +1,27 @@
-# ---------------------------------- Imports ---------------------------------
 import os
+import cv2
 import random
+import shutil
 import numpy as np
-import matplotlib.pyplot as plt
-import pandas as pd
 import math
 import mlflow
 import mlflow.keras
+import pandas as pd
+import tensorflow as tf
+
 from keras.applications import VGG16
-from keras.applications.vgg16 import preprocess_input
-from keras.metrics import Precision, Recall, Accuracy
 from keras.models import Sequential
 from keras.layers import Dense, Flatten, BatchNormalization, Dropout
 from keras.optimizers import RMSprop
 from keras.preprocessing.image import ImageDataGenerator
 from keras.callbacks import EarlyStopping
-import tensorflow as tf
-from sklearn.metrics import recall_score, precision_score, roc_auc_score, roc_curve
-from mlflow.tracking import MlflowClient
-from fonctions.data_processing import normalize_images
-import os
-import shutil
-import numpy as np
-import cv2
+
+from fonctions.data_processing import *
+from fonctions.data_loading import *
 
 
 
-# ---------------------------------- Data Loading ---------------------------------
+# Data loading ------
 
 random.seed(422)
 tf.random.set_seed(422)
@@ -37,6 +32,7 @@ def format_filename(suffix_number, padding=5, prefix="img_", extension="jpeg"):
     filename = f"{prefix}{formatted_number}.{extension}"
     return filename
 
+
 def create_dir(directory_path, remove_if_exists=True):
     # Supprimer le répertoire existant s'il existe
     if os.path.exists(directory_path) and remove_if_exists:
@@ -44,9 +40,8 @@ def create_dir(directory_path, remove_if_exists=True):
 
     # Créer le nouveau répertoire
     os.makedirs(directory_path, exist_ok=(not remove_if_exists))
-    
-    
-    
+
+
 def load_images(path_to_folder):
     # Liste des classes (dossiers "yes" et "no")
     classes = ["yes", "no"]
@@ -79,7 +74,6 @@ def load_images(path_to_folder):
         last_index = last_index + idx + 1
 
     return np.array(X, dtype='object'), np.array(y)
-
 
 
 
@@ -130,7 +124,6 @@ for class_name in classes:
     create_dir(val_class_path)
     create_dir(test_class_path)
 
-
     for dataset_name, dataset_images, dataset_class_path in [('train', train_images, train_class_path), 
                                                              ('val', val_images, val_class_path),
                                                              ('test', test_images, test_class_path)]:
@@ -141,6 +134,7 @@ for class_name in classes:
             file_mapping += [{'raw_img_path': src, 'proc_img_path': dst, 'class_name': class_name, 'dataset_name': dataset_name}]
             counter += 1
 
+
 df = pd.DataFrame.from_records(file_mapping)
 df.to_csv(os.path.join(root_path, 'file_mapping.csv'), index=False, header=True)
 
@@ -149,39 +143,8 @@ X_val, y_val = load_images(val_path)
 X_test, y_test = load_images(test_path)
 
 
-# ---------------------------------- Display Images --------------------------------- 
 
-def display_images(X, y, n):
-    # Filtrer les images par classe
-    yes_images =  X[y == 1][:n]
-    no_images = X[y == 0][:n]
-
-    # Calculer le nombre de lignes et colonnes pour chaque classe
-    n_rows = int(math.sqrt(n))
-    n_cols = math.ceil(n / n_rows)
-
-    # Créer la figure pour la classe "yes"
-    fig_yes, axs_yes = plt.subplots(n_rows, n_cols, figsize=(12, 10))
-    fig_yes.suptitle('Class: Yes')
-
-    # Afficher des images de la classe "yes"
-    for i in range(min(n, len(yes_images))):
-        axs_yes[i // n_cols, i % n_cols].imshow(yes_images[i])
-
-    # Créer la figure pour la classe "no"
-    fig_no, axs_no = plt.subplots(n_rows, n_cols, figsize=(12, 10))
-    fig_no.suptitle('Class: No')
-
-    # Afficher des images de la classe "no"
-    for i in range(min(n, len(no_images))):
-        axs_no[i // n_cols, i % n_cols].imshow(no_images[i])
-
-    plt.show()
-
-# Utilisation de la fonction avec X et y provenant du train
-display_images(X_train, y_train, n=20)
-
-# ---------------------------------- Data Processing  --------------------------------- 
+# Data processing ------ 
 
 # Utilisation de la fonction avec X (images non normalisées) et la taille cible
 target_size = (224, 224)
@@ -189,11 +152,9 @@ X_train_norm = normalize_images(X_train, target_size)
 X_val_norm = normalize_images(X_val, target_size)
 X_test_norm = normalize_images(X_test, target_size)
 
-display_images(X_train_norm, y_train, 20)
 
 
-# ---------------------------------- Trainning and Testing Model ---------------------------------
-
+# Training and testing model ------
 
 os.environ['CUDA_VISIBLE_DEVICES'] = '1'
 
@@ -211,7 +172,7 @@ model.add(BatchNormalization())
 model.add(Dropout(0.5))
 model.add(Dense(NUM_CLASSES, activation='sigmoid'))
 
-# figer les poids du VGG
+# Figer les poids du VGG
 model.layers[0].trainable = False
 
 # Compiler le modèle
@@ -253,7 +214,9 @@ BATCH_SIZE = 16
 
 print("Model successfully loaded and created.")
 
-# ---------------------------------- Saving Model, Params and Metrics ---------------------------------
+
+
+# Saving model, params and metrics ------
 
 mlflow.set_tracking_uri("http://127.0.0.1:5000")
 
@@ -270,9 +233,7 @@ with mlflow.start_run(run_name="b14_tumor_detection_model") as run:
     
     # Log the model
     mlflow.keras.log_model(model, "models", registered_model_name="b14_tumor_detection_model")
-    
-    
-  
-# Evaluate the model
-model.evaluate(X_test_norm, y_test) 
 
+
+# Evaluate the model
+model.evaluate(X_test_norm, y_test)
