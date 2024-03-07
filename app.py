@@ -15,8 +15,7 @@ from bson import ObjectId
 import requests
 from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
-
-#from weasyprint import HTML
+from weasyprint import HTML
 
 app = FastAPI()
 
@@ -30,18 +29,18 @@ class PatientModel(BaseModel):
     name: str
     age: int
     gender: str
-    image: bytes
-    prediction: Optional[float] 
-    validation: Optional[str] = "En attente de validation"
-
+    image: str
+    # prediction: float
+    # validation: str
+    
 # Modèles Pydantic pour la modification du patient
 class PatientUpdateModel(BaseModel):
     name: str
     age: int
     gender: str
-    image: bytes
-    prediction: Optional[float]
-    validation: Optional[str]
+    image: str
+    # prediction: float
+    # validation: str
 
 # Modèles Pydantic pour la visualisation des patients
 class PatientViewModel(BaseModel):
@@ -49,8 +48,18 @@ class PatientViewModel(BaseModel):
     age: int
     gender: str
     id: str
-    prediction: Optional[float] 
-    validation: Optional[str] = "En attente de validation"
+    prediction: float
+    # validation: str
+
+# Modèles Pydantic pour la details view des patients
+class PatientDetailsModel(BaseModel):
+    name: str
+    age: int
+    gender: str
+    id: str
+    prediction: float
+    encoded_image: str
+    # validation: str
     
 # Modèle Pydantic pour les prédictions (à adapter selon vos besoins)
 class PredictionModel(BaseModel):
@@ -90,7 +99,7 @@ def add_patient(request: Request):
 @app.post("/add_patient")
 async def add_patient_post(patient: PatientModel):
     # Insérer le patient dans la base de données
-    patient_data = patient.dict()
+    patient_data = patient.model_dump()
 
     print(patient)
 
@@ -187,6 +196,7 @@ async def download_pdf_predict(patient_id: str):
                 <table>
                     <thead>
                         <tr>
+                            <th>ID</th>
                             <th>Age</th>
                             <th>Gender</th>
                             <th>Prediction</th>
@@ -194,6 +204,7 @@ async def download_pdf_predict(patient_id: str):
                     </thead>
                     <tbody>
                         <tr>
+                            <td>{patient['_id']}</td>
                             <td>{patient['age']}</td>
                             <td>{patient['gender']}</td>
                             <td>{patient['prediction']}</td>                            
@@ -220,22 +231,30 @@ async def download_pdf_predict(patient_id: str):
 # Dans votre route FastAPI pour afficher les détails du patient
 @app.get("/details_patients/{patient_id}", response_class=HTMLResponse)
 async def details_patients(request: Request, patient_id: str):
-    # Récupérer les informations du patient depuis la base de données
     patient = db.patients.find_one({"_id": ObjectId(patient_id)})
     if patient:
-        # Décoder l'image base64
         # Récupérer l'image depuis la base de données
-        image_bytes = patient['image']
-
-            # Décodez l'image base64
-        image_data = base64.b64decode(image_bytes)
-
-            # Balise d'image HTML avec la chaîne base64 de l'image
-        image_html = f"<img src='data:image/jpeg;base64,{image_bytes}' />"
-
-        return templates.TemplateResponse("details_patients.html", {"request": request, "patient": patient})
+        image_data = patient['image']
+        if isinstance(image_data, str):
+            # Si les données sont déjà encodées en base64, pas besoin de les ré-encoder
+            encoded_image = image_data
+        else:
+            # Encodez les données en base64
+            encoded_image = base64.b64encode(image_data).decode('utf-8')
+        # Convertir la prédiction en pourcentage et formater avec deux chiffres après la virgule
+        prediction_percentage = "{:.2f}".format(patient.get('prediction', 0.0) * 100)
+        # Créez l'instance de PatientDetailsModel en spécifiant les champs nécessaires
+        patient_view_model = PatientDetailsModel(
+            id=str(patient['_id']),
+            name=patient['name'],
+            age=patient['age'],
+            gender=patient['gender'],
+            prediction=prediction_percentage,  # Convertir la prédiction en pourcentage
+            encoded_image=encoded_image
+        )
+        return templates.TemplateResponse("details_patients.html", {"request": request, "patient": patient_view_model})
     else:
-        return JSONResponse(content={"message": "Patient not found."}, status_code=404)
+        return Response(content="Patient not found.", status_code=404)
 
 # Modèle Pydantic pour la modification du champ de validation
 class ValidationUpdateModel(BaseModel):
