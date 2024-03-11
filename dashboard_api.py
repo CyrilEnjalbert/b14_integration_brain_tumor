@@ -93,13 +93,21 @@ async def add_patient_post(patient: PatientModel):
 
 @app.get("/view_patients", response_class=HTMLResponse)
 async def view_patients(request: Request):
-    for patient in patients:
-        prediction_percentage = "{:.2f}%".format(patient.prediction * 100)  # Supposant que 'prediction' est déjà un pourcentage
-        patient.prediction = prediction_percentage
-        
     to_validate_patients = [PatientViewModel(id=str(patient['_id']), **patient) for patient in db.patients.find({"validation": "En attente de validation"})]
     corrected_patients = [PatientViewModel(id=str(patient['_id']), **patient) for patient in db.patients.find({"validation": "Corrected"})]
     validated_patients = [PatientViewModel(id=str(patient['_id']), **patient) for patient in db.patients.find({"validation": "Validated"})]
+
+    for patient in to_validate_patients:
+        prediction_percentage = "{:.2f}%".format(patient.prediction * 100)  # Supposant que 'prediction' est déjà un pourcentage
+        patient.prediction = prediction_percentage
+
+    for patient in corrected_patients:
+        prediction_percentage = "{:.2f}%".format(patient.prediction * 100)  # Supposant que 'prediction' est déjà un pourcentage
+        patient.prediction = prediction_percentage
+
+    for patient in validated_patients:
+        prediction_percentage = "{:.2f}%".format(patient.prediction * 100)  # Supposant que 'prediction' est déjà un pourcentage
+        patient.prediction = prediction_percentage
 
     return templates.TemplateResponse("view_patients.html", {"request": request,
                                                              "to_validate_patients": to_validate_patients,
