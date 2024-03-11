@@ -56,16 +56,16 @@ class PatientModel(BaseModel):
 # Fonction pour prétraiter l'image
 def preprocess_image(image):
     target_size = (224, 224)
-    
+
     # Open bytes as image using PIL
     img = Image.open(BytesIO(image))
-    
+
     # Convertir l'image en un tableau numpy
     img_array = np.array(img)
-    
+
     # Normaliser et redimensionner l'image
     img_array = normalize_images([img_array], target_size)
-    
+
     return img_array
 
 
@@ -102,13 +102,13 @@ def feedback_non_valid_patients(train_dir):
             label = "no"
         else:
             label = "yes"
-        
+
         # Create class directory if it doesn't exist
         class_dir = os.path.join(train_dir, label)
-        
+
         db.patients.update_one({"_id": patient["_id"]}, {"$set": {"validation": "non-valide(feedback)"}})
 
-        
+
         if not os.path.exists(class_dir):
             os.makedirs(class_dir)
 
@@ -118,14 +118,14 @@ def feedback_non_valid_patients(train_dir):
 
             # Get the current count of images in the directory
             img_count = len(os.listdir(class_dir))
-            
+
             # Increment the count and format it with leading zeros
             img_count += 1
             img_count_str = str(img_count).zfill(5)  # Format count with leading zeros
 
             # Save the image to the train directory with the appropriate label
             image_filename = f"img_{img_count_str}.jpeg"
-            
+
             # Save the image to the train directory with the appropriate label
             image_path = os.path.join(class_dir, image_filename)
             with open(image_path, "wb") as f:
@@ -138,7 +138,7 @@ def feedback_non_valid_patients(train_dir):
 
 
 # Inputs ------
-            
+
 @app.post("/feedback")
 async def run_feedback():
     # Fetch patients from MongoDB
@@ -158,13 +158,13 @@ async def run_feedback():
 def predict(patient):
     # Preprocess the uploaded image
     processed_image = preprocess_image(patient.image)
-    
+
     # Make predictions using the loaded model
     predictions = loaded_model.predict(processed_image)
 
     # Assuming predictions is a single float value
     patient.prediction = float(predictions[0])
-    
+
     return patient
 
 
@@ -195,8 +195,8 @@ async def run_prediction():
             print(f"Processing prediction for patient: {patient.name}")
             patient = predict(patient)
             print(f"Prediction for patient {patient.name}: {patient.prediction}")
-            
-    
+
+
     # Update MongoDB collection with predictions
     update_collection(patients)
 
