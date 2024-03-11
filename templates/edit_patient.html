@@ -10,7 +10,6 @@
         <h1>Edit Patient</h1>
 
         <form id="editPatientForm">
-            <!-- Ajouter des champs pour éditer les informations du patient -->
             <label for="name">Name:</label>
             <input type="text" id="name" name="name" required value="{{ patient.name }}">
             <br>
@@ -29,46 +28,60 @@
             <label for="image">Image</label>
                 <input type="file" id="image" name="image" accept="image/*" required>
 
-            <!-- Ajouter un champ caché pour stocker l'ID du patient -->
             <input type="hidden" id="patientId" name="patientId" value="{{ patient_id }}">
             <br>
 
-            <!-- Ajouter un bouton pour soumettre le formulaire -->
             <button type="button" id="submitBtn">Submit</button>
         </form>
 
-        <!-- Ajouter le script JavaScript pour gérer la soumission du formulaire -->
-        <!-- Ajouter le script JavaScript pour gérer la soumission du formulaire -->
         <script>
             const submitButton = document.getElementById('submitBtn');
             submitButton.addEventListener('click', () => {
-                // Récupérer les valeurs du formulaire
                 const name = document.getElementById('name').value;
                 const age = document.getElementById('age').value;
                 const gender = document.getElementById('gender').value;
-                const patientId = document.getElementById('patientId').value;
+                const imageInput = document.getElementById('image');
+                const image = imageInput.files[0];
 
-                // Construire l'objet avec les données du formulaire
-                const formData = {
-                    name: name,
-                    age: age,
-                    gender: gender
+                const patientId = document.getElementById('patientId').value;
+                
+                const reader = new FileReader();
+                reader.readAsDataURL(image);
+
+                reader.onload = async function () {
+                    const base64Image = reader.result.split(',')[1];
+
+                    try {
+                        const response = await fetch(`/edit_patient/${patientId}`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                name,
+                                age,
+                                gender,
+                                image: base64Image, // Send the Base64 data
+                            }),
+                        });
+
+                        console.log(response)
+
+                        if (response.ok) {
+                            const responseData = await response.json();
+                            const redirectUrl = responseData.redirect_url;
+                            window.location.href = redirectUrl; // Redirect after adding the patient
+                        } else {
+                            console.error('Error editing patient:', response.statusText);
+                        }
+                    } catch (error) {
+                        console.error('Error editing patient:', error.message);
+                    }
                 };
 
-                // Effectuer une requête vers l'endpoint de modification du patient
-                fetch(`/edit_patient/${patientId}`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(formData)
-                })
-                .then(response => response.json())
-                .then(data => {
-                    // Rediriger vers la vue des patients après l'édition
-                    window.location.href = '/view_patients';
-                })
-                .catch(error => console.error('Error:', error));
+                reader.onerror = function (error) {
+                    console.error('Error reading the file:', error);
+                };
             });
         </script>
     </body>
