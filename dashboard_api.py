@@ -1,6 +1,8 @@
 import uvicorn
 import requests
 import base64
+import tempfile
+import os
 
 from pymongo import MongoClient
 from bson import ObjectId
@@ -11,6 +13,7 @@ from fastapi import FastAPI, Request, Form, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse, Response
+from starlette.responses import FileResponse
 
 from config.paths import mongo_path
 
@@ -57,8 +60,7 @@ class PatientDetailsModel(BaseModel):
     id: str
     prediction: float
     encoded_image: str
-    
-    
+
 # Modèle Pydantic pour les prédictions (à adapter selon vos besoins)
 class PredictionModel(BaseModel):
     # Ajoutez les champs nécessaires pour les prédictions
@@ -91,6 +93,7 @@ async def add_patient_post(patient: PatientModel):
     return JSONResponse(content={"redirect_url": "/view_patients"})
 
 
+
 @app.get("/view_patients", response_class=HTMLResponse)
 async def view_patients(request: Request):
     to_validate_patients = [PatientViewModel(id=str(patient['_id']), **patient) for patient in db.patients.find({"validation": "En attente de validation"})]
@@ -114,42 +117,36 @@ async def view_patients(request: Request):
                                                              "corrected_patients": corrected_patients,
                                                              "validated_patients": validated_patients})
 
-@app.get("/view_patients", response_class=HTMLResponse)
-async def view_patients(request: Request):
-    # Récupérer tous les patients depuis la base de données
-    patients = [PatientViewModel(id=str(patient['_id']), **patient) for patient in db.patients.find()]
-
-    # Itérer sur chaque patient et formater la prédiction en pourcentage
-    for patient in patients:
-        prediction_percentage = "{:.2f}%".format(patient.prediction * 100)  # Supposant que 'prediction' est déjà un pourcentage
-        patient.prediction = prediction_percentage
-
-    return templates.TemplateResponse("view_patients.html", {"request": request, "patients": patients})
-
 
 
 # Route pour éditer un patient
 @app.get("/edit_patient/{patient_id}", response_class=HTMLResponse)
 async def edit_patient(request: Request, patient_id: str):
     # Récupérer les informations du patient pour affichage dans le formulaire
-    patient = PatientModel(**db.patients.find_one({"_id": ObjectId(patient_id)}))
+    patient = PatientUpdateModel(**db.patients.find_one({"_id": ObjectId(patient_id)}))
     return templates.TemplateResponse("edit_patient.html", {"request": request, "patient": patient,
                                                             "patient_id": patient_id})
 
 @app.post("/edit_patient/{patient_id}")
 async def edit_patient_post(patient_id: str, patient: PatientUpdateModel):
-    # Mettre à jour le patient dans la base de données
+    # Update the patient in the database
     db.patients.update_one({"_id": ObjectId(patient_id)}, {"$set": patient.model_dump()})
-    return RedirectResponse(url="/view_patients")
+    return JSONResponse(content={"redirect_url": "/view_patients"})
 
-from typing import Optional
+
 
 @app.get("/search_patients", response_class=HTMLResponse)
 async def search_patients(request: Request, search: Optional[str] = None):
     if search:
-        patients_from_db = db.patients.find({"name": {"$regex": search, "$options": "i"}})
+        # Filter by name and validation status
+        patients_from_db = db.patients.find({
+            "$and": [
+                {"name": {"$regex": search, "$options": "i"}},
+                {"validation": {"$in": ["En attente de validation", "Corrected", "Validated"]}}
+            ]
+        })
     else:
-        return RedirectResponse(url="/view_patients")   
+        return JSONResponse(content={"redirect_url": "/view_patients"})
 
     patients = [PatientViewModel(id=str(patient['_id']), **patient) for patient in patients_from_db]
 
@@ -162,7 +159,6 @@ async def search_patients(request: Request, search: Optional[str] = None):
 
 
 
-
 @app.get("/view_image/{patient_id}", response_class=HTMLResponse)
 async def view_image(request: Request, patient_id: str):
     # Récupérer les informations du patient pour affichage dans la page view_image.html
@@ -170,10 +166,6 @@ async def view_image(request: Request, patient_id: str):
     return templates.TemplateResponse("view_image.html", {"request": request, "patient": patient})
 
 
-from fastapi import HTTPException
-from starlette.responses import FileResponse
-import tempfile
-import os
 
 # Utilisez un répertoire temporaire pour stocker temporairement les PDF
 temp_dir = tempfile.TemporaryDirectory()
@@ -305,7 +297,6 @@ def generate_pdf_content(patient):
 
 
 
-
 # Dans votre route FastAPI pour afficher les détails du patient
 @app.get("/details_patients/{patient_id}", response_class=HTMLResponse)
 async def details_patients(request: Request, patient_id: str):
@@ -335,10 +326,6 @@ async def details_patients(request: Request, patient_id: str):
         return Response(content="Patient not found.", status_code=404)
 
 
-# Modèle Pydantic pour la modification du champ de validation
-class ValidationUpdateModel(BaseModel):
-    validation: str
-
 
 @app.post("/validate_patient/{patient_id}", response_class=HTMLResponse)
 async def validate_patient_post(patient_id: str, action: str = Form(...)):
@@ -354,8 +341,8 @@ async def validate_patient_post(patient_id: str, action: str = Form(...)):
         print("Patient corrected successfully")
         # Here you can add additional functionality if needed, like sending a POST request to another endpoint.
     
-    # Redirect back to the view_patients page
-    return RedirectResponse(url="/view_patients", status_code=303)
+    return JSONResponse(content={"redirect_url": "/view_patients"})
+
 
 
 if __name__ == '__main__':
