@@ -262,6 +262,9 @@ def generate_pdf_content(patient):
     </style>
     """
 
+    # Calcul de la prédiction en pourcentage
+    prediction_percentage = "{:.2f}%".format(patient['prediction'] * 100)
+
     html_content = f"""
     <html>
     <head><title>Predictions - {patient['name']}</title>{css_style}</head>
@@ -282,7 +285,7 @@ def generate_pdf_content(patient):
                     <td>{patient['_id']}</td>
                     <td>{patient['age']}</td>
                     <td>{patient['gender']}</td>
-                    <td>{patient['prediction']}</td>                            
+                    <td>{prediction_percentage}</td>                            
                 </tr>
             </tbody>
         </table>
@@ -291,6 +294,7 @@ def generate_pdf_content(patient):
     </html>
     """
     return html_content
+
 
 
 

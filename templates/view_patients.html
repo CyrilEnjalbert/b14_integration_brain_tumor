@@ -51,7 +51,7 @@
                             <td class="icon-cell"><a href="{{ url_for('details_patients', patient_id=patient.id) }}"><i class="fas fa-eye"></i></a></td>
                             <td class="icon-cell">
                                 <a href="{{ url_for('edit_patient', patient_id=patient.id) }}"><i class="fas fa-edit"></i></a>
-                                <a href="{{ url_for('preview_pdf_predict', patient_id=patient.id) }}"><i class="fas fa-download"></i></a>
+                                <a href="{{ url_for('preview_pdf_predict', patient_id=patient.id) }}" target="_blank"><i class="fas fa-download"></i></a>
                             </td>
                         </tr>
                     {% endfor %}
@@ -82,7 +82,7 @@
                             <td>{{ patient.validation }}</td>
                             <td class="icon-cell">
                                 <a href="{{ url_for('edit_patient', patient_id=patient.id) }}"><i class="fas fa-edit"></i></a>
-                                <a href="{{ url_for('preview_pdf_predict', patient_id=patient.id) }}"><i class="fas fa-download"></i></a>
+                                <a href="{{ url_for('preview_pdf_predict', patient_id=patient.id) }}" target="_blank"><i class="fas fa-download"></i></a>
                             </td>
                         </tr>
                     {% endfor %}
@@ -113,7 +113,7 @@
                             <td>{{ patient.validation }}</td>
                             <td class="icon-cell">
                                 <a href="{{ url_for('edit_patient', patient_id=patient.id) }}"><i class="fas fa-edit"></i></a>
-                                <a href="{{ url_for('preview_pdf_predict', patient_id=patient.id) }}"><i class="fas fa-download"></i></a>
+                                <a href="{{ url_for('preview_pdf_predict', patient_id=patient.id) }}" target="_blank"><i class="fas fa-download"></i></a>
                             </td>
                         </tr>
                     {% endfor %}
