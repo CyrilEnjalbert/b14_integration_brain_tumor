@@ -57,7 +57,7 @@ class PatientDetailsModel(BaseModel):
     id: str
     prediction: float
     encoded_image: str
-    # validation: str
+    
     
 # Modèle Pydantic pour les prédictions (à adapter selon vos besoins)
 class PredictionModel(BaseModel):
@@ -91,9 +91,12 @@ async def add_patient_post(patient: PatientModel):
     return JSONResponse(content={"redirect_url": "/view_patients"})
 
 
-# Route pour visualiser tous les patients
 @app.get("/view_patients", response_class=HTMLResponse)
 async def view_patients(request: Request):
+    for patient in patients:
+        prediction_percentage = "{:.2f}%".format(patient.prediction * 100)  # Supposant que 'prediction' est déjà un pourcentage
+        patient.prediction = prediction_percentage
+        
     to_validate_patients = [PatientViewModel(id=str(patient['_id']), **patient) for patient in db.patients.find({"validation": "En attente de validation"})]
     corrected_patients = [PatientViewModel(id=str(patient['_id']), **patient) for patient in db.patients.find({"validation": "Corrected"})]
     validated_patients = [PatientViewModel(id=str(patient['_id']), **patient) for patient in db.patients.find({"validation": "Validated"})]
@@ -102,6 +105,19 @@ async def view_patients(request: Request):
                                                              "to_validate_patients": to_validate_patients,
                                                              "corrected_patients": corrected_patients,
                                                              "validated_patients": validated_patients})
+
+@app.get("/view_patients", response_class=HTMLResponse)
+async def view_patients(request: Request):
+    # Récupérer tous les patients depuis la base de données
+    patients = [PatientViewModel(id=str(patient['_id']), **patient) for patient in db.patients.find()]
+
+    # Itérer sur chaque patient et formater la prédiction en pourcentage
+    for patient in patients:
+        prediction_percentage = "{:.2f}%".format(patient.prediction * 100)  # Supposant que 'prediction' est déjà un pourcentage
+        patient.prediction = prediction_percentage
+
+    return templates.TemplateResponse("view_patients.html", {"request": request, "patients": patients})
+
 
 
 # Route pour éditer un patient
@@ -118,6 +134,7 @@ async def edit_patient_post(patient_id: str, patient: PatientUpdateModel):
     db.patients.update_one({"_id": ObjectId(patient_id)}, {"$set": patient.model_dump()})
     return RedirectResponse(url="/view_patients")
 
+from typing import Optional
 
 @app.get("/search_patients", response_class=HTMLResponse)
 async def search_patients(request: Request, search: Optional[str] = None):
@@ -125,8 +142,17 @@ async def search_patients(request: Request, search: Optional[str] = None):
         patients_from_db = db.patients.find({"name": {"$regex": search, "$options": "i"}})
     else:
         return RedirectResponse(url="/view_patients")   
+
     patients = [PatientViewModel(id=str(patient['_id']), **patient) for patient in patients_from_db]
+
+    # Itérer sur chaque patient pour calculer prediction_percentage
+    for patient in patients:
+        prediction_percentage = "{:.2f}%".format(patient.prediction * 100)
+        patient.prediction = prediction_percentage
+
     return templates.TemplateResponse("view_patients.html", {"request": request, "patients": patients})
+
+
 
 
 @app.get("/view_image/{patient_id}", response_class=HTMLResponse)
@@ -136,84 +162,61 @@ async def view_image(request: Request, patient_id: str):
     return templates.TemplateResponse("view_image.html", {"request": request, "patient": patient})
 
 
+from fastapi import HTTPException
+from starlette.responses import FileResponse
+import tempfile
+import os
+
+# Utilisez un répertoire temporaire pour stocker temporairement les PDF
+temp_dir = tempfile.TemporaryDirectory()
+
+@app.get("/preview_pdf_predict/{patient_id}")
+async def preview_pdf_predict(patient_id: str):
+    try:
+        # Fetch patient data
+        patient = db.patients.find_one({"_id": ObjectId(patient_id)})
+        if patient:
+            # Génération du contenu HTML pour le PDF
+            html_content = generate_pdf_content(patient)
+
+            # Génération du PDF à partir du contenu HTML
+            pdf_bytes = HTML(string=html_content).write_pdf()
+
+            # Stocker le PDF temporairement
+            pdf_path = f"{temp_dir.name}/{patient_id}.pdf"
+            with open(pdf_path, "wb") as pdf_file:
+                pdf_file.write(pdf_bytes)
+
+            # Retourner une réponse de redirection vers le PDF temporaire
+            return RedirectResponse(url=f"/pdf_preview/{patient_id}")
+        else:
+            raise HTTPException(status_code=404, detail="Patient not found.")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="An error occurred while generating the PDF.")
+
+@app.get("/pdf_preview/{patient_id}")
+async def pdf_preview(patient_id: str):
+    # Récupérer le chemin du PDF temporaire
+    pdf_path = f"{temp_dir.name}/{patient_id}.pdf"
+    if os.path.exists(pdf_path):
+        # Retourner le PDF pour prévisualisation
+        return FileResponse(pdf_path, media_type='application/pdf')
+    else:
+        raise HTTPException(status_code=404, detail="PDF not found.")
+
 @app.get("/download_pdf_predict/{patient_id}")
 async def download_pdf_predict(patient_id: str):
     try:
         # Fetch patient data
         patient = db.patients.find_one({"_id": ObjectId(patient_id)})
         if patient:
-            # Récupérer l'image depuis la base de données
-            image_bytes = patient['image']
-
-            # Décodez l'image base64
-            image_data = base64.b64decode(image_bytes)
-
-            # Balise d'image HTML avec la chaîne base64 de l'image
-            image_html = f"<img src='data:image/jpeg;base64,{image_bytes}' />"
-
-            # Style CSS pour le PDF
-            css_style = """
-            <style>
-                body {
-                    font-family: Arial, sans-serif;
-                }
-                h1 {
-                    text-align: center;
-                    margin-bottom: 20px;
-                }
-                table {
-                    width: 100%;
-                    border-collapse: collapse;
-                    margin-bottom: 20px;
-                }
-                th, td {
-                    border: 1px solid #dddddd;
-                    text-align: left;
-                    padding: 8px;
-                }
-                th {
-                    background-color: #f2f2f2;
-                }
-                img {
-                    max-width: 1000px;
-                    max-height: 1000px;
-                }
-            </style>
-            """
-
-            html_content = f"""
-            <html>
-            <head><title>Predictions - {patient['name']}</title>{css_style}</head>
-            <body>
-                <h1>Predictions - {patient['name']}</h1>
-
-                <table>
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Age</th>
-                            <th>Gender</th>
-                            <th>Prediction</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>{patient['_id']}</td>
-                            <td>{patient['age']}</td>
-                            <td>{patient['gender']}</td>
-                            <td>{patient['prediction']}</td>                            
-                        </tr>
-                    </tbody>
-                </table>
-                {image_html}
-            </body>
-            </html>
-            """
+            # Génération du contenu HTML pour le PDF
+            html_content = generate_pdf_content(patient)
 
             # Génération du PDF à partir du contenu HTML
             pdf_bytes = HTML(string=html_content).write_pdf()
 
-            # Retourner le PDF en tant que réponse HTTP
+            # Retourner le PDF en tant que réponse HTTP pour téléchargement
             response = Response(content=pdf_bytes, media_type='application/pdf')
             response.headers['Content-Disposition'] = f'attachment; filename="{patient["name"]}_predictions_tumor.pdf"'
             return response
@@ -221,6 +224,78 @@ async def download_pdf_predict(patient_id: str):
             return JSONResponse(content={"message": "Patient not found."}, status_code=404)
     except Exception as e:
         return JSONResponse(content={"message": "An error occurred while generating the PDF."}, status_code=500)
+
+def generate_pdf_content(patient):
+    # Récupérer l'image depuis la base de données
+    image_bytes = patient['image']
+
+    # Décodez l'image base64
+    image_html = f"<img src='data:image/jpeg;base64,{image_bytes}' />"
+
+    # Style CSS pour le PDF
+    css_style = """
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            border: 1px solid #dddddd;
+            text-align: left;
+            padding: 8px;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        img {
+            max-width: 1000px;
+            max-height: 1000px;
+        }
+    </style>
+    """
+
+    # Calcul de la prédiction en pourcentage
+    prediction_percentage = "{:.2f}%".format(patient['prediction'] * 100)
+
+    html_content = f"""
+    <html>
+    <head><title>Predictions - {patient['name']}</title>{css_style}</head>
+    <body>
+        <h1>Predictions - {patient['name']}</h1>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Age</th>
+                    <th>Gender</th>
+                    <th>Prediction</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>{patient['_id']}</td>
+                    <td>{patient['age']}</td>
+                    <td>{patient['gender']}</td>
+                    <td>{prediction_percentage}</td>                            
+                </tr>
+            </tbody>
+        </table>
+        {image_html}
+    </body>
+    </html>
+    """
+    return html_content
+
+
 
 
 # Dans votre route FastAPI pour afficher les détails du patient
