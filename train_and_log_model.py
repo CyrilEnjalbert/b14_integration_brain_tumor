@@ -230,10 +230,12 @@ with mlflow.start_run(run_name="b14_tumor_detection_model") as run:
                         steps_per_epoch=len(X_train_norm) // BATCH_SIZE,
                         validation_data=(X_val_norm, y_val),
                         callbacks=[early_stopping])
+    # Evaluate the model
+    loss, acc = model.evaluate(X_test_norm, y_test)
     
     # Log the model
+    mlflow.log_metric("test_accuracy",acc )
+    mlflow.log_metric("test_loss", loss )
     mlflow.keras.log_model(model, "models", registered_model_name="b14_tumor_detection_model")
 
 
-# Evaluate the model
-model.evaluate(X_test_norm, y_test)

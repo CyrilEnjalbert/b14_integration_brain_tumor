@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Patients - Assistant(e)</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', path='styles.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        .login-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            text-decoration: none;
+            color: #000;
+            padding: 5px 10px;
+            border: 1px solid #000;
+            border-radius: 5px;
+        }
+
+        .login-btn:hover {
+            background-color: #000;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <a href="/login" class="login-btn">Login</a>
+    <h1>View Patients - Assistant(e)</h1>
+    <div id="actions-container">
+        <!-- Tabs for different tables -->
+        <div class="tabs">
+            <button class="tablinks to-validate-btn" onclick="openTable(event, 'to-validate')" id="defaultOpen">To Validate</button>
+            <button class="tablinks corrected-btn" onclick="openTable(event, 'corrected')">Corrected</button>
+            <button class="tablinks validated-btn" onclick="openTable(event, 'validated')">Validated</button>
+        </div>
+        <form id="searchForm" method="GET" action="/search_patients">
+            <input type="text" id="searchInput" name="search" placeholder="Search for a patient...">
+            <button type="submit">Search</button>
+            <button type="button" id="cancel-btn">Cancel</button>
+        </form>
+        <button class="add-btn">
+            <a href="{{ url_for('add_patient') }}">+ Add Patient</a>
+        </button>
+    </div>
+
+    <!-- Table for Predictions to Validate -->
+    <div id="to-validate" class="tabcontent">
+        <table border="1">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Age</th>
+                    <th>Gender</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for patient in to_validate_patients %}
+                    <tr>
+                        <td>{{ patient.name }}</td>
+                        <td>{{ patient.age }}</td>
+                        <td>{{ patient.gender }}</td>
+                        <td class="icon-cell">
+                            <a href="{{ url_for('edit_patient', patient_id=patient.id) }}"><i class="fas fa-edit"></i></a>
+                            <a href="{{ url_for('preview_pdf_predict', patient_id=patient.id) }}" target="_blank"><i class="fas fa-download"></i></a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Table for Corrected Predictions -->
+    <div id="corrected" class="tabcontent">
+        <table border="1">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Age</th>
+                    <th>Gender</th>
+                    <th>Doctor's opinion</th>
+                    <th>Actions</th>                     
+                </tr>
+            </thead>
+            <tbody>
+                {% for patient in corrected_patients %}
+                    <tr>
+                        <td>{{ patient.name }}</td>
+                        <td>{{ patient.age }}</td>
+                        <td>{{ patient.gender }}</td> 
+                        <td>{{ patient.validation }}</td>  
+                        <td class="icon-cell">
+                            <a href="{{ url_for('edit_patient', patient_id=patient.id) }}"><i class="fas fa-edit"></i></a>
+                            <a href="{{ url_for('preview_pdf_predict', patient_id=patient.id) }}" target="_blank"><i class="fas fa-download"></i></a>
+                        </td>                         
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Table for Validated Predictions -->
+    <div id="validated" class="tabcontent">
+        <table border="1">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Age</th>
+                    <th>Gender</th>
+                    <th>Doctor's opinion</th>
+                    <th>Actions</th> 
+                </tr>
+            </thead>
+            <tbody>
+                {% for patient in validated_patients %}
+                    <tr>
+                        <td>{{ patient.name }}</td>
+                        <td>{{ patient.age }}</td>
+                        <td>{{ patient.gender }}</td>
+                        <td>{{ patient.validation }}</td>
+                        <td class="icon-cell">
+                            <a href="{{ url_for('edit_patient', patient_id=patient.id) }}"><i class="fas fa-edit"></i></a>
+                            <a href="{{ url_for('preview_pdf_predict', patient_id=patient.id) }}" target="_blank"><i class="fas fa-download"></i></a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        function openTable(evt, tableName) {
+            var i, tabcontent, tablinks;
+            tabcontent = document.getElementsByClassName("tabcontent");
+            for (i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].style.display = "none";
+            }
+            tablinks = document.getElementsByClassName("tablinks");
+            for (i = 0; i < tablinks.length; i++) {
+                tablinks[i].className = tablinks[i].className.replace(" active", "");
+            }
+            document.getElementById(tableName).style.display = "block";
+            evt.currentTarget.className += " active";
+        }
+
+        document.getElementById("defaultOpen").click();
+
+        document.getElementById('searchForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const searchInput = document.getElementById('searchInput').value;
+            window.location.href = '/search_patients?search=' + searchInput;
+        });
+
+        document.getElementById('cancel-btn').addEventListener('click', function(event) {
+            event.preventDefault();
+            window.location.href = '/view_patients';
+        });
+    </script>
+</body>
+</html>

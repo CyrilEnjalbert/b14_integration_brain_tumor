@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <!-- Utilisez un lien relatif pour le CSS -->
+    <link rel="stylesheet" type="text/css" href="/static/styles.css">
+</head>
+<body>
+
+    <h1>Login</h1>
+
+    <form id="patientForm" action="/login" method="post">
+        <label for="name">Name</label>
+        <input type="text" id="name" name="name" required>
+    
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" required>
+    
+        <button type="submit">Connexion</button>
+    </form>
+    
+
+    <script>
+        // Ajoutez un écouteur d'événement au formulaire pour gérer la soumission
+        document.getElementById('patientForm').addEventListener('submit', async function(event) {
+            event.preventDefault(); // Empêcher la soumission du formulaire par défaut
+
+            const formData = new FormData(); // Créer un objet FormData pour envoyer les données du formulaire
+            formData.append('name', document.getElementById('name').value); // Ajouter le nom d'utilisateur au FormData
+            formData.append('password', document.getElementById('password').value); // Ajouter le mot de passe au FormData
+
+            try {
+                const response = await fetch('/login', {
+                    method: 'POST',
+                    body: formData, // Utiliser FormData pour envoyer les données du formulaire
+                });
+
+                if (response.ok) {
+                    const responseData = await response.json();
+                    const redirectUrl = responseData.redirect_url;
+                    window.location.href = redirectUrl; // Redirection après une connexion réussie
+                } else {
+                    console.error('Error logging in:', response.statusText);
+                }
+            } catch (error) {
+                console.error('Error logging in:', error.message);
+            }
+        });
+    </script>
+</body>
+</html>

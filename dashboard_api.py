@@ -20,7 +20,12 @@ app = FastAPI()
 # Connexion à la base de données MongoDB
 client = MongoClient(mongo_path)
 db = client["braintumor"]  # Remplacez "your_database_name" par le nom de votre base de données MongoDB
+col_add = db["patients"]
+col_role = db["logins_users"]
 
+class PatientLoginModel(BaseModel):
+    name: str
+    password: str
 
 # Modèle Pydantic pour les données du patient
 class PatientModel(BaseModel):
@@ -72,6 +77,33 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 # Instance du moteur de modèles Jinja2 pour la gestion des templates HTML
 templates = Jinja2Templates(directory="templates")
 
+# Route pour afficher la page de connexion
+@app.get("/login", response_class=HTMLResponse)
+def get_login(request: Request):
+    # Renvoyer le contenu HTML de la page de connexion
+    return templates.TemplateResponse("login.html", {"request": request})
+
+# Route pour gérer la soumission du formulaire de connexion
+@app.post("/login")
+async def post_login(name: str = Form(...), password: str = Form(...)):
+    # Vérifier si l'utilisateur existe dans la base de données
+    user = col_role.find_one({"name": name, "password": password})
+    if user:
+        role = user.get("role", "")
+        if role == "Docteur":
+            # Rediriger le docteur vers la page view_patients.html
+            return JSONResponse(content={"redirect_url": "/view_patients"})
+        elif role == "Assistante":
+            # Rediriger l'assistante vers la page view_assistant_patients.html
+            
+            return JSONResponse(content={"redirect_url": "/view_assistant_patients"})
+        else:
+            raise HTTPException(status_code=403, detail="Invalid role")
+    else:
+        raise HTTPException(status_code=401, detail="Invalid username or password")
+
+
+
 
 # Route pour ajouter un patient
 @app.get("/add_patient", response_class=HTMLResponse)
@@ -88,10 +120,9 @@ async def add_patient_post(patient: PatientModel):
 
     # Send a POST request to the endpoint
     requests.post( f"http://localhost:8000/predict")
-    return JSONResponse(content={"redirect_url": "/view_patients"})
+    return JSONResponse(content={"redirect_url": "/view_assistant_patients"})
 
-
-@app.get("/view_patients", response_class=HTMLResponse)
+@app.post("/view_patients")
 async def view_patients(request: Request):
     to_validate_patients = [PatientViewModel(id=str(patient['_id']), **patient) for patient in db.patients.find({"validation": "En attente de validation"})]
     corrected_patients = [PatientViewModel(id=str(patient['_id']), **patient) for patient in db.patients.find({"validation": "Corrected"})]
@@ -116,6 +147,29 @@ async def view_patients(request: Request):
 
 @app.get("/view_patients", response_class=HTMLResponse)
 async def view_patients(request: Request):
+    to_validate_patients = [PatientViewModel(id=str(patient['_id']), **patient) for patient in db.patients.find({"validation": "En attente de validation"})]
+    corrected_patients = [PatientViewModel(id=str(patient['_id']), **patient) for patient in db.patients.find({"validation": "Corrected"})]
+    validated_patients = [PatientViewModel(id=str(patient['_id']), **patient) for patient in db.patients.find({"validation": "Validated"})]
+
+    for patient in to_validate_patients:
+        prediction_percentage = "{:.2f}%".format(patient.prediction * 100)  # Supposant que 'prediction' est déjà un pourcentage
+        patient.prediction = prediction_percentage
+
+    for patient in corrected_patients:
+        prediction_percentage = "{:.2f}%".format(patient.prediction * 100)  # Supposant que 'prediction' est déjà un pourcentage
+        patient.prediction = prediction_percentage
+
+    for patient in validated_patients:
+        prediction_percentage = "{:.2f}%".format(patient.prediction * 100)  # Supposant que 'prediction' est déjà un pourcentage
+        patient.prediction = prediction_percentage
+
+    return templates.TemplateResponse("view_patients.html", {"request": request,
+                                                             "to_validate_patients": to_validate_patients,
+                                                             "corrected_patients": corrected_patients,
+                                                             "validated_patients": validated_patients})
+
+@app.get("/view_patients2", response_class=HTMLResponse)
+async def view_patients(request: Request):
     # Récupérer tous les patients depuis la base de données
     patients = [PatientViewModel(id=str(patient['_id']), **patient) for patient in db.patients.find()]
 
@@ -126,6 +180,28 @@ async def view_patients(request: Request):
 
     return templates.TemplateResponse("view_patients.html", {"request": request, "patients": patients})
 
+@app.get("/view_assistant_patients", response_class=HTMLResponse)
+async def view_patients(request: Request):
+    to_validate_patients = [PatientViewModel(id=str(patient['_id']), **patient) for patient in db.patients.find({"validation": "En attente de validation"})]
+    corrected_patients = [PatientViewModel(id=str(patient['_id']), **patient) for patient in db.patients.find({"validation": "Corrected"})]
+    validated_patients = [PatientViewModel(id=str(patient['_id']), **patient) for patient in db.patients.find({"validation": "Validated"})]
+
+    for patient in to_validate_patients:
+        prediction_percentage = "{:.2f}%".format(patient.prediction * 100)  # Supposant que 'prediction' est déjà un pourcentage
+        patient.prediction = prediction_percentage
+
+    for patient in corrected_patients:
+        prediction_percentage = "{:.2f}%".format(patient.prediction * 100)  # Supposant que 'prediction' est déjà un pourcentage
+        patient.prediction = prediction_percentage
+
+    for patient in validated_patients:
+        prediction_percentage = "{:.2f}%".format(patient.prediction * 100)  # Supposant que 'prediction' est déjà un pourcentage
+        patient.prediction = prediction_percentage
+
+    return templates.TemplateResponse("view_assistant_patients.html", {"request": request,
+                                                             "to_validate_patients": to_validate_patients,
+                                                             "corrected_patients": corrected_patients,
+                                                             "validated_patients": validated_patients})
 
 
 # Route pour éditer un patient
