@@ -19,8 +19,8 @@
             <img src="data:image/jpeg;base64,{{ patient.encoded_image }}" alt="Patient Tumor Image">
             <h2 id="pred">{{ patient.prediction }} %</h2>
             <form action="/validate_patient/{{ patient.id }}" method="POST" id="validation-form">
-                <button type="submit" name="validate" id="ok">Confirmer</button>
-                <button type="submit" name="reject" id="not-ok">Infirmer</button>
+                <button type="submit" name="action" value="validated" id="ok">Confirmer</button>
+                <button type="submit" name="action" value="corrected" id="not-ok">Infirmer</button>
             </form>
         </div>
     </body>

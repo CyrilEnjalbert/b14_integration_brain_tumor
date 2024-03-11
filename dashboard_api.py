@@ -7,7 +7,7 @@ from bson import ObjectId
 from pydantic import BaseModel
 from typing import Optional
 from weasyprint import HTML
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Form, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse, Response
@@ -29,8 +29,7 @@ class PatientModel(BaseModel):
     gender: str
     image: str
     # prediction: float
-    validation: str = "En attente de validation"
-    
+    validation: str = 'En attente de validation'
     
 # Modèles Pydantic pour la modification du patient
 class PatientUpdateModel(BaseModel):
@@ -48,7 +47,7 @@ class PatientViewModel(BaseModel):
     gender: str
     id: str
     prediction: float
-    validation: str = "En attente de validation"
+    validation: str
 
 # Modèles Pydantic pour la details view des patients
 class PatientDetailsModel(BaseModel):
@@ -84,8 +83,6 @@ async def add_patient_post(patient: PatientModel):
     # Insérer le patient dans la base de données
     patient_data = patient.model_dump()
 
-    print(patient)
-
     db.patients.insert_one(patient_data)
     # URL of the FastAPI endpoint
 
@@ -96,15 +93,18 @@ async def add_patient_post(patient: PatientModel):
 
 @app.get("/view_patients", response_class=HTMLResponse)
 async def view_patients(request: Request):
-    # Récupérer tous les patients depuis la base de données
-    patients = [PatientViewModel(id=str(patient['_id']), **patient) for patient in db.patients.find()]
-
-    # Itérer sur chaque patient et formater la prédiction en pourcentage
     for patient in patients:
         prediction_percentage = "{:.2f}%".format(patient.prediction * 100)  # Supposant que 'prediction' est déjà un pourcentage
         patient.prediction = prediction_percentage
+        
+    to_validate_patients = [PatientViewModel(id=str(patient['_id']), **patient) for patient in db.patients.find({"validation": "En attente de validation"})]
+    corrected_patients = [PatientViewModel(id=str(patient['_id']), **patient) for patient in db.patients.find({"validation": "Corrected"})]
+    validated_patients = [PatientViewModel(id=str(patient['_id']), **patient) for patient in db.patients.find({"validation": "Validated"})]
 
-    return templates.TemplateResponse("view_patients.html", {"request": request, "patients": patients})
+    return templates.TemplateResponse("view_patients.html", {"request": request,
+                                                             "to_validate_patients": to_validate_patients,
+                                                             "corrected_patients": corrected_patients,
+                                                             "validated_patients": validated_patients})
 
 @app.get("/view_patients", response_class=HTMLResponse)
 async def view_patients(request: Request):
@@ -332,33 +332,22 @@ class ValidationUpdateModel(BaseModel):
     validation: str
 
 
-# FastAPI endpoint to update the validation field of a patient
 @app.post("/validate_patient/{patient_id}", response_class=HTMLResponse)
-async def validate_patient_post(request: Request, patient_id: str, validation_status: str):
-    form_data = await request.form()
-
-    validation_status = form_data.get('validation')
+async def validate_patient_post(patient_id: str, action: str = Form(...)):
     patient = db.patients.find_one({"_id": ObjectId(patient_id)})
 
-    if validation_status == 'valide':
-        
-        # Update validation status to "valide"
-            # Récupérer les informations du patient depuis la base de données
-        db.patients.update_one({"_id": ObjectId(patient_id)},  {"$set": {patient.validation : "valide"}})
-        print("Patient validated successfully")      
-    elif validation_status == 'non-valide':
-        # Update validation status to "non-valide"
-        db.patients.update_one({"_id": ObjectId(patient_id)}, {"$set": {patient.validation:  "non-valide"}})
-        print("Patient unvalidated successfully")
-        
-        # Send a POST request to the feedback endpoint
-        requests.post("http://localhost:8000/feedback")
-        print("Feedback reported successfully")
-
-    else:
-        print("Error in validation of patient")
-
-    return {"message": "Validation status updated successfully"}
+    if action == 'validated':
+        # Update validation status to "validated"
+        db.patients.update_one({"_id": ObjectId(patient_id)}, {"$set": {"validation": "Validated"}})
+        print("Patient validated successfully")
+    elif action == 'corrected':
+        # Update validation status to "corrected"
+        db.patients.update_one({"_id": ObjectId(patient_id)}, {"$set": {"validation": "Corrected"}})
+        print("Patient corrected successfully")
+        # Here you can add additional functionality if needed, like sending a POST request to another endpoint.
+    
+    # Redirect back to the view_patients page
+    return RedirectResponse(url="/view_patients", status_code=303)
 
 
 if __name__ == '__main__':
