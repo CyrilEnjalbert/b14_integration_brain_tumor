@@ -1,1 +1,1 @@
-mongo_path = "mongodb://localhost:27017"
+mongo_path = "mongodb://root:example@localhost:27017/"

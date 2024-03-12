@@ -30,11 +30,11 @@ model_name = "b14_tumor_detection_model"
 # Get the latest version of the model
 client = MlflowClient()
 latest_version = client.get_latest_versions(model_name, stages=["None"])[0].version
-latest_version = 1
 
 loaded_model = mlflow.pyfunc.load_model(model_uri=f"models:/{model_name}/{latest_version}")
 
 client = MlflowClient()
+
 
 
 # Mongo DB ------
@@ -43,7 +43,6 @@ client = MlflowClient()
 client = MongoClient(mongo_path)
 db = client["braintumor"]
 
-# Modèle Pydantic pour les données du patient
 class PatientModel(BaseModel):
     name: str
     age: int
@@ -53,19 +52,20 @@ class PatientModel(BaseModel):
     validation: Optional[str] = None
 
 
+
 # Fonction pour prétraiter l'image
 def preprocess_image(image):
     target_size = (224, 224)
-    
+
     # Open bytes as image using PIL
     img = Image.open(BytesIO(image))
-    
+
     # Convertir l'image en un tableau numpy
     img_array = np.array(img)
-    
+
     # Normaliser et redimensionner l'image
     img_array = normalize_images([img_array], target_size)
-    
+
     return img_array
 
 
@@ -73,14 +73,6 @@ def preprocess_image(image):
 def fetch_patients():
     patients = []
     for document in db.patients.find({}):
-        document["image"] = base64.b64decode(document["image"])
-        patient_data = PatientModel(**document)
-        patients.append(patient_data)
-    return patients
-
-def fetch_pending_validation_patients():
-    patients = []
-    for document in db.patients.find({"validation": "En attente de validation"}):
         document["image"] = base64.b64decode(document["image"])
         patient_data = PatientModel(**document)
         patients.append(patient_data)
@@ -99,25 +91,24 @@ def feedback_non_valid_patients(train_dir):
     if not os.path.exists(train_dir):
         os.makedirs(train_dir)
 
-    # Query MongoDB for documents with "validation" field containing "Corrected"
-    non_valid_patients = db.patients.find({"validation": "Corrected"})
+    # Query MongoDB for documents with "validation" field containing "non-valide"
+    non_valid_patients = db.patients.find({"validation": "non-valide"})
     print(f"Patients non-validés trouvés : {non_valid_patients}")
 
     # Iterate over non-valid patients
     for patient in non_valid_patients:
         # Check if the label is valid
         if patient["prediction"] > 0.5:
-            
             label = "no"
         else:
             label = "yes"
-        
+
         # Create class directory if it doesn't exist
         class_dir = os.path.join(train_dir, label)
-        
-        db.patients.update_one({"_id": patient["_id"]}, {"$set": {"validation": "Corrected(feedback)"}})
 
-        
+        db.patients.update_one({"_id": patient["_id"]}, {"$set": {"validation": "non-valide(feedback)"}})
+
+
         if not os.path.exists(class_dir):
             os.makedirs(class_dir)
 
@@ -127,14 +118,14 @@ def feedback_non_valid_patients(train_dir):
 
             # Get the current count of images in the directory
             img_count = len(os.listdir(class_dir))
-            
+
             # Increment the count and format it with leading zeros
             img_count += 1
             img_count_str = str(img_count).zfill(5)  # Format count with leading zeros
 
             # Save the image to the train directory with the appropriate label
             image_filename = f"img_{img_count_str}.jpeg"
-            
+
             # Save the image to the train directory with the appropriate label
             image_path = os.path.join(class_dir, image_filename)
             with open(image_path, "wb") as f:
@@ -147,7 +138,7 @@ def feedback_non_valid_patients(train_dir):
 
 
 # Inputs ------
-            
+
 @app.post("/feedback")
 async def run_feedback():
     # Fetch patients from MongoDB
@@ -167,50 +158,25 @@ async def run_feedback():
 def predict(patient):
     # Preprocess the uploaded image
     processed_image = preprocess_image(patient.image)
-    
+
     # Make predictions using the loaded model
     predictions = loaded_model.predict(processed_image)
 
     # Assuming predictions is a single float value
     patient.prediction = float(predictions[0])
-    
+
     return patient
 
 
 # Function to update MongoDB collection with predictions
 def update_collection(patients):
     for patient in patients:
-        db.patients.update_one({"name": patient.name}, {"$set": {"prediction_version":  latest_version}})
         db.patients.update_one({"name": patient.name}, {"$set": {"prediction": patient.prediction}}, upsert=True)
 
 
 # Define FastAPI endpoint
 @app.post("/predict")
 async def run_prediction():
-    # Fetch patients from MongoDB
-    patients = fetch_pending_validation_patients()
-
-    if not patients:
-        print("No patients found in the database.")
-        return {"message": "No patients found in the database."}
-
-    # Execute prediction model for each patient
-    for patient in patients:
-        print(f"Processing prediction for patient: {patient.name}")
-        patient = predict(patient)
-        print(f"Prediction for patient {patient.name}: {patient.prediction} with {model_name} version {latest_version}")
-                
-    # Update MongoDB collection with predictions
-    update_collection(patients)
-
-    print("Predictions updated successfully")
-    return {"message": "Predictions updated successfully"}
-
-
-
-# Define FastAPI endpoint
-@app.post("/predict_all")
-async def run_prediction_all():
     # Fetch patients from MongoDB
     patients = fetch_patients()
 
@@ -229,8 +195,8 @@ async def run_prediction_all():
             print(f"Processing prediction for patient: {patient.name}")
             patient = predict(patient)
             print(f"Prediction for patient {patient.name}: {patient.prediction}")
-            
-    
+
+
     # Update MongoDB collection with predictions
     update_collection(patients)
 

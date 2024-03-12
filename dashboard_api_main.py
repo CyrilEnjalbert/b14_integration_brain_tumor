@@ -90,7 +90,6 @@ async def add_patient_post(patient: PatientModel):
 
     # Send a POST request to the endpoint
     requests.post( f"http://localhost:8000/predict")
-    requests.post( f"http://localhost:8000/feedback")
     return JSONResponse(content={"redirect_url": "/view_patients"})
 
 
@@ -98,7 +97,7 @@ async def add_patient_post(patient: PatientModel):
 @app.get("/view_patients", response_class=HTMLResponse)
 async def view_patients(request: Request):
     to_validate_patients = [PatientViewModel(id=str(patient['_id']), **patient) for patient in db.patients.find({"validation": "En attente de validation"})]
-    corrected_patients = [PatientViewModel(id=str(patient['_id']), **patient) for patient in db.patients.find(({"validation": {"$in": ["Corrected", "Corrected(feedback)"]}}))]
+    corrected_patients = [PatientViewModel(id=str(patient['_id']), **patient) for patient in db.patients.find({"validation": "Corrected"})]
     validated_patients = [PatientViewModel(id=str(patient['_id']), **patient) for patient in db.patients.find({"validation": "Validated"})]
 
     for patient in to_validate_patients:
@@ -339,11 +338,11 @@ async def validate_patient_post(patient_id: str, action: str = Form(...)):
     elif action == 'corrected':
         # Update validation status to "corrected"
         db.patients.update_one({"_id": ObjectId(patient_id)}, {"$set": {"validation": "Corrected"}})
-        requests.post( f"http://localhost:8000/feedback")
         print("Patient corrected successfully")
         # Here you can add additional functionality if needed, like sending a POST request to another endpoint.
     
-    return RedirectResponse(url="/view_patients", status_code=303)
+    return JSONResponse(content={"redirect_url": "/view_patients"})
+
 
 
 if __name__ == '__main__':
