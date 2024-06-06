@@ -3,6 +3,7 @@ import requests
 import base64
 import tempfile
 import os
+import re #besoin de validation des req ?
 
 from pymongo import MongoClient
 from bson import ObjectId
@@ -16,6 +17,9 @@ from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse, Resp
 from starlette.responses import FileResponse
 
 from config.paths import mongo_path
+
+def is_integer(s):
+    return bool(re.match(r'^-?\d+$', s)) #a utiliser pour verif un id par exemple ? je pose ca la
 
 
 app = FastAPI()
@@ -162,6 +166,7 @@ async def search_patients(request: Request, search: Optional[str] = None):
 
 @app.get("/view_image/{patient_id}", response_class=HTMLResponse)
 async def view_image(request: Request, patient_id: str):
+
     # Récupérer les informations du patient pour affichage dans la page view_image.html
     patient = PatientModel(**db.patients.find_one({"_id": ObjectId(patient_id)}))
     return templates.TemplateResponse("view_image.html", {"request": request, "patient": patient})
